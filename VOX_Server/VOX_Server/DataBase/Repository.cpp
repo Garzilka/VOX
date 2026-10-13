@@ -18,27 +18,21 @@
 #include "Rules/CheckServerMembersRule.h"
 
 
-// =========================================================================
-// Вспомогательные функции на чистом C++ для замены Qt-утилит
-// =========================================================================
 
-static string toLowerTrimmed(string str) {
-    // Trim в начале
+static string toLowerTrimmed(string str) 
+{
     str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](unsigned char ch) {
         return !std::isspace(ch);
         }));
-    // Trim в конце
     str.erase(std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) {
         return !std::isspace(ch);
         }).base(), str.end());
-    // В нижний регистр
     std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
         return std::tolower(c);
         });
     return str;
 }
 
-// Простейшая генерация UUID v4 без сторонних библиотек
 static string generateUUID() 
 {
     static std::random_device rd;
@@ -400,7 +394,7 @@ vector<SUserPassport> Repository::searchUsersByUsername(const string& myUUID, co
     catch (...) {}
     return results;
 }
-// Пакетный ленивый запрос через нативный динамический SQL IN (в libpqxx массивы передаются через строку параметров)
+
 vector<SUserPassport> Repository::getBatchUsersFromDB(const vector<string>& UUIDs)
 {
     vector<SUserPassport> results;
@@ -471,13 +465,12 @@ pair<bool, string> Repository::sendFriendRequest(const string& senderUUID, const
     }
     catch (const pqxx::sql_error& e) 
     {
-        // Ловим ошибки SQL конкретно
         spdlog::error("[DB] SQL Error in addFriendRequest: {}", e.what());
         result.second = "Database SQL Error: " + string(e.what());
         return result;
     }
-    catch (const std::exception& e) {
-        // Ловим общие ошибки (сеть, таймауты)
+    catch (const std::exception& e) 
+    {
         spdlog::error("[DB] General Error in addFriendRequest: {}", e.what());
         result.second = "Internal Server Error: " + string(e.what());
         return result;
@@ -722,8 +715,6 @@ bool Repository::createServerInDB(const SMakeServerTask& result_MakeTask, SServe
     try
     {
         pqxx::work tx(*_SQL_Connection);
-
-        // 1. Выполняем вставку сервера и получаем возвращаемые базой данные
         pqxx::result res = tx.exec(pqxx::prepped("insert_server"), pqxx::params{ result_MakeTask.Name, result_MakeTask.userUUID });
 
         if (!res.empty())

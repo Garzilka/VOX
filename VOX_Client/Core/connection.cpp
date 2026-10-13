@@ -14,7 +14,6 @@ QConnection::QConnection(QObject *parent) : QObject(parent)
     connect(m_socket, &QTcpSocket::disconnected, this, &QConnection::onDisconnected);
     connect(m_socket, &QTcpSocket::errorOccurred, this, &QConnection::onErrorOccurred);
     connectToServer("127.0.0.1", 55);
-    //connectToServer("212.109.198.185", 55);
 }
 
 void QConnection::connectToServer(const QString &host, quint16 port)

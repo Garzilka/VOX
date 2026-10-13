@@ -59,10 +59,8 @@ public:
 protected:
     void handleReadyRead()
     {
-        // Читаем данные из девайса в любом случае, чтобы буфер звуковой карты не переполнялся
         QByteArray newData = m_io->readAll();
 
-        // Если стоит мут — просто очищаем накопленный буфер и выходим
         if (m_isMuted) {
             m_buffer.clear();
             return;

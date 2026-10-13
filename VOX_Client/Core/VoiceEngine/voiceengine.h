@@ -32,7 +32,7 @@ class QVoiceEngine : public QObject
 
 private:
     QString m_currentRoomGUID;
-    QString m_liveKitServerUrl = "ws://212.109.198.185:7880";
+    QString m_liveKitServerUrl = "";//Будет вынесено отдельно
     bool m_isMicrophoneMuted = false;
 
     // ЖИВЫЕ ОБЪЕКТЫ LIVEKIT SDK
@@ -41,8 +41,6 @@ private:
     std::shared_ptr<livekit::AudioSource> m_audioSource;
     QMicCapture* m_MicCapture = nullptr;
 
-    // ИСПРАВЛЕНО: Делегат теперь хранится как монолитный объект класса.
-    // Он гарантированно создан и НЕ равен nullptr в памяти никогда!
     VoiceRoomDelegate m_roomDelegate;
 
     explicit QVoiceEngine(QObject *parent = nullptr) : QObject(parent)
@@ -59,21 +57,17 @@ private:
 public:
     void stopAll()
     {
-        // 1. Сначала переводим флаг воркеров в false, чтобы циклы в потоках завершились
         for (auto* w : m_workers)
         {
-            // Напрямую меняем атомарный флаг (если m_running public) или вызываем неблокирующий stop.
             QMetaObject::invokeMethod(w, "stop", Qt::QueuedConnection);
         }
 
-        // 2. Гасим поток воспроизведения Qt
         if (m_playbackThread.isRunning())
         {
             m_playbackThread.quit();
-            m_playbackThread.wait(); // Ждем завершения цикла событий Qt
+            m_playbackThread.wait();
         }
 
-        // 3. Безопасно удаляем воркеров через планировщик Qt
         for (auto* w : m_workers)
         {
             w->deleteLater();
@@ -90,7 +84,7 @@ public:
         if (m_MicCapture)
         {
             m_MicCapture->stop();
-            m_MicCapture->deleteLater(); // безопаснее, чем delete вручную
+            m_MicCapture->deleteLater();
             m_MicCapture = nullptr;
         }
     }
@@ -99,8 +93,6 @@ public:
 
     void handleSubscribedTrack(std::shared_ptr<livekit::Track> track)
     {
-        // здесь: AudioStream::fromTrack, QAudioSink, PlaybackWorker, moveToThread —
-        // всё то, что сейчас лежит в onTrackSubscribed
         if (!track || track->kind() != livekit::TrackKind::KIND_AUDIO)
             return;
 
@@ -123,13 +115,11 @@ public:
     {
         m_isMicrophoneMuted = !m_isMicrophoneMuted;
 
-        // 1. Управляем самим WebRTC треком (для индикации у других участников)
         if (m_localAudioTrack)
         {
             m_localAudioTrack->setMuted(m_isMicrophoneMuted);
         }
 
-        // 2. ИСПРАВЛЕНИЕ: Физически прекращаем слать байты из нашего захватчика
         if (m_MicCapture)
         {
             m_MicCapture->setMuted(m_isMicrophoneMuted);
@@ -140,7 +130,6 @@ public:
 
     void connectToVoiceServer(const QString& roomGUID, const QString& jwtToken)
     {
-        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Если мы уже в канале — жестко и полностью сбрасываем старую сессию!
         if (!m_currentRoomGUID.isEmpty()) {
             qInfo() << "VOICE ENGINE | Обнаружено активное подключение. Сброс старой сессии перед переподключением...";
             disconnectFromVoiceServer();
