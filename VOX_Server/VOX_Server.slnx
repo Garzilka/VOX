@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="VOX_Server/VOX_Server.vcxproj" Id="2ec81191-5e8a-4940-ba53-90d47da42102" />
+</Solution>

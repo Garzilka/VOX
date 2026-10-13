@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{2ec81191-5e8a-4940-ba53-90d47da42102}</ProjectGuid>
+    <RootNamespace>VOXServer</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Data\AsioThreads.h" />
+    <ClCompile Include="Dispatch\Client_Dispatcher.cpp" />
+    <ClCompile Include="Services\Channel\Channel.cpp" />
+    <ClCompile Include="Client.cpp" />
+    <ClCompile Include="Dispatch\Client_Commands\Commands.cpp" />
+    <ClCompile Include="Core.cpp" />
+    <ClCompile Include="Dispatch\BD_Commands\BD_Commands.cpp" />
+    <ClCompile Include="DataBase\Repository.cpp" />
+    <ClCompile Include="Libs\Crypto\CryptoLib.cpp" />
+    <ClCompile Include="Services\Common\Impl\AppVersionService.cpp" />
+    <ClCompile Include="Services\Common\Impl\AuthClientService.cpp" />
+    <ClCompile Include="Services\Common\Impl\CacheClientService.cpp" />
+    <ClCompile Include="Services\Common\Impl\ConnectionClientServiceImpl.cpp" />
+    <ClCompile Include="Services\Common\Impl\NotificationServiceImpl.cpp" />
+    <ClCompile Include="Services\Presence\SearchUserService.cpp" />
+    <ClCompile Include="Services\Relation\Relation.cpp" />
+    <ClCompile Include="Services\Server\Server.cpp" />
+    <ClCompile Include="Services\Users\Impl\CacheUserServiceImpl.cpp" />
+    <ClCompile Include="Services\Users\User.cpp" />
+    <ClCompile Include="Services\Users\User.h" />
+    <ClCompile Include="VOX_Server.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Libs\Tools\ToolLib.h" />
+    <ClInclude Include="Services\Common\Impl\CacheClientService.h" />
+    <ClInclude Include="Services\Channel\Channel.h" />
+    <ClInclude Include="Services\Presence\LoginBroadcastService.h" />
+    <ClInclude Include="Services\Relation\Impl\FriendService.h" />
+    <ClInclude Include="Services\Relation\Impl\IFriendCacheService.h" />
+    <ClInclude Include="Services\Relation\Relation.h" />
+    <ClInclude Include="Services\Users\Impl\CacheUserServiceImpl.h" />
+    <ClInclude Include="zzzz\ChannelManager.h" />
+    <ClInclude Include="Services\Common\Impl\AppVersionService.h" />
+    <ClInclude Include="Services\Common\Impl\AuthClientService.h" />
+    <ClInclude Include="Client.h" />
+    <ClInclude Include="zzzz\ClientManager.h" />
+    <ClInclude Include="Services\Common\Impl\ConnectionClientServiceImpl.h" />
+    <ClInclude Include="Dispatch\Client_Commands\Commands.h" />
+    <ClInclude Include="Dispatch\Client_Dispatcher.h" />
+    <ClInclude Include="Services\Common\CommonInterfaces.h" />
+    <ClInclude Include="Services\Common\Impl\NotificationServiceImpl.h" />
+    <ClInclude Include="Services\Relation\RelationshipInterfaces.h" />
+    <ClInclude Include="Libs\DI\DIServiceContainer.h" />
+    <ClInclude Include="Services\Server\Impl\CacheServerService.h" />
+    <ClInclude Include="Services\Server\Impl\DBServerService.h" />
+    <ClInclude Include="Services\Server\Impl\MakeServerService.h" />
+    <ClInclude Include="Services\Server\ServerInterfaces.h" />
+    <ClInclude Include="Services\Session\SessionInterfaces.h" />
+    <ClInclude Include="Services\Users\UserProfileInterfaces.h" />
+    <ClInclude Include="Core.h" />
+    <ClInclude Include="DataBase\BDTaskQueue.h" />
+    <ClInclude Include="DataBase\BDWorkerPool.h" />
+    <ClInclude Include="DataBase\Rules\CheckDBrule.h" />
+    <ClInclude Include="Dispatch\BD_Dispatcher.h" />
+    <ClInclude Include="Dispatch\BD_Commands\BD_Commands.h" />
+    <ClInclude Include="DataBase\Repository.h" />
+    <ClInclude Include="DataBase\Rules\CheckAppVersionsRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckChannelMembersRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckChannelsRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckFriendsRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckMessagesRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckServerInvitesRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckServerMembersRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckServerRolesRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckServersRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckSessionsRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckUsersRule.h" />
+    <ClInclude Include="DataBase\Rules\CheckVoiceStatesRule.h" />
+    <ClInclude Include="Data\Common.h" />
+    <ClInclude Include="Data\MessagePacket\ChannelsData.h" />
+    <ClInclude Include="Data\MessagePacket\CoreData.h" />
+    <ClInclude Include="Data\MessagesIncluds.h" />
+    <ClInclude Include="Data\BDTaskTypes.h" />
+    <ClInclude Include="Data\MessagePacket\FriendData.h" />
+    <ClInclude Include="Data\MessagePacket\ServerData.h" />
+    <ClInclude Include="Libs\Crypto\CryptoLib.h" />
+    <ClInclude Include="Services\Server\Server.h" />
+    <ClInclude Include="zzzz\ServerManager.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
