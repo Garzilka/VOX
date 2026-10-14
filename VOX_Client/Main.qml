@@ -53,14 +53,12 @@ ApplicationWindow
             var component = Qt.createComponent("MainWindow.qml");
             if (component.status === Component.Ready)
             {
-                // ИСПРАВЛЕНО: Сохраняем созданный объект в долговечное свойство окна splashWindow,
-                // передавая parent: null для создания независимого дескриптора ОС
                 splashWindow.rootMainWindow = component.createObject(null);
 
                 if (splashWindow.rootMainWindow)
                 {
                     splashWindow.rootMainWindow.show();
-                    splashWindow.close(); // Теперь сплеш безопасно закроется, а главное окно останется жить!
+                    splashWindow.close();
                 }
             }
             else

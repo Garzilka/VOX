@@ -13,8 +13,6 @@ ItemDelegate
     property var _status
     property var _currentActivity
 
-
-
     width: parent ? parent.width : 200
     height: 60
 
@@ -29,7 +27,8 @@ ItemDelegate
         acceptedButtons: Qt.LeftButton
         onTapped:
         {
-            ChatManager.openOrCreateChatFromUI(0, modelData["guid"], "", "");
+            // modelData — это напрямую строка UUID
+            ChatManager.openOrCreateChatFromUI(0, modelData, "", "");
         }
     }
 
@@ -39,8 +38,7 @@ ItemDelegate
     {
         id: rightTap
         acceptedButtons: Qt.RightButton
-        // Передаем: имя, сам этот делегат (friendRowRoot) и точку клика внутри него
-        onTapped: friendRowRoot.rightClicked(_name, modelData["guid"], friendRowRoot, rightTap.point.position.x, rightTap.point.position.y)
+        onTapped: friendRowRoot.rightClicked(_name, modelData, friendRowRoot, rightTap.point.position.x, rightTap.point.position.y)
     }
 
     // Разделяющая линия

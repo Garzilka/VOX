@@ -90,17 +90,22 @@ void AuthClientServiceImpl::dbResponseAuth(const JsonObject& res)
 
     if (AuthData._AuthReponse.Response)
     {
-        cout << "Успешная авторизация для: " << AuthData._AuthReponse.UUID << " | " << AuthData._UserpeerAddress << endl;
+        CLIENT_INFO("Успешная авторизация для: {}", AuthData._AuthReponse.UUID);
         AuthData._AuthReponse.Response = _CacheClientService->authComplete(AuthData._AuthReponse.UUID, AuthData._UserpeerAddress);
     }
     else
     {
-        cout << "Провальная авторизация для: " << AuthData._AuthReponse.UUID << " | " << AuthData._UserpeerAddress << endl;
+        CLIENT_INFO("Провальная авторизация для: {}", AuthData._UserpeerAddress);
     }
 
     if (!notificationService) return;
+    notificationService->NotifyClients({ AuthData._AuthReponse.UUID }, AuthData._AuthReponse);
 
-    notificationService->NotifyClients( { AuthData._AuthReponse.UUID }, AuthData._AuthReponse);
+    SUserRelations Results;
+    if (relationCacheService && relationCacheService->handleUserRelations(AuthData._AuthReponse.UUID, Results))
+    {
+        notificationService->NotifyClients({ AuthData._AuthReponse.UUID }, Results);
+    }
 }
 
 bool AuthClientServiceImpl::IsValidInput(const SAuthorizationData& Data, string& outErrorReason)

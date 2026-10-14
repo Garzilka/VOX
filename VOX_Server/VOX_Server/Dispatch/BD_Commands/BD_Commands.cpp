@@ -29,10 +29,8 @@ void CmdRequestServerPassport::execute(const BDTask& data)
         Exit(data);
         return;
     }
-    SRequestByServerTask InData = SRequestByServerTask::FromJSON(data.payload);
+    SServerPassport ServerPassport = SServerPassport::FromJSON(data.payload);
 
-    SServerPassport ServerPassport;
-    ServerPassport.ServerUUID = InData.serverUUID;
     bool Response = _Repository->loadServerPassport(ServerPassport);
     if (!Response)
     {
@@ -50,33 +48,27 @@ void CmdRequestServerDetails::execute(const BDTask& data)
         Exit(data);
         return;
     }
-    SRequestByServerTask InData = SRequestByServerTask::FromJSON(data.payload);
+    SServerDetailsData InData = SServerDetailsData(data.payload);
 
-    SServerDetailsData ServerDetails;
-    ServerDetails.ServerUUID = InData.serverUUID;
-    ServerDetails.Channels.clear();
-    ServerDetails.MembersData.clear();
-    ServerDetails.RoleData.clear();
-
-    if (!_Repository->loadServerChannelsUUIDs(InData.serverUUID, ServerDetails.Channels))
+    if (!_Repository->loadServerChannelsUUIDs(InData.ServerUUID, InData.Channels))
     {
         Exit(data);
         return;
     }
 
-    if (!_Repository->loadServerMembersWithRoles(InData.serverUUID, ServerDetails.MembersData))
+    if (!_Repository->loadServerMembersWithRoles(InData.ServerUUID, InData.MembersData))
     {
         Exit(data);
         return;
     }
 
-    if (!_Repository->loadServerRoles(InData.serverUUID, ServerDetails.RoleData))
+    if (!_Repository->loadServerRoles(InData.ServerUUID, InData.RoleData))
     {
         Exit(data);
         return;
     }
 
-    data.onResult(true, ServerDetails.ToJSON());
+    data.onResult(true, InData.ToJSON());
 }
 
 void CmdRequestAppVersion::execute(const BDTask& data)
@@ -142,4 +134,106 @@ void CmdRequestReg::execute(const BDTask& data)
     Result._AuthReponse = InData._AuthReq;
     Result._AuthReponse.UUID = Response;
     data.onResult(true, Result.ToJSON());
+}
+
+void CmdLoadRelation::execute(const BDTask& data)
+{
+    if (!_Repository)
+    {
+        Exit(data);
+        return;
+    }
+    SUserRelations Result = SUserRelations(data.payload);
+    try
+    {
+        if (Result.userOwnerUUID.empty())
+        {
+            Exit(data);
+            return;
+        }
+
+        bool result = _Repository->getUserRelations(Result.userOwnerUUID, Result);
+        data.onResult(result, Result.ToJSON());
+    }
+    catch (const std::exception& e)
+    {
+        cerr << "CmdLoadRelation EXECUTE ERROR | " << e.what() << endl;
+        Exit(data);
+    }
+}
+
+void CmdFriendRequest::execute(const BDTask& data)
+{
+    if (!_Repository)
+    {
+        Exit(data);
+        return;
+    }
+    SFriendRequest InData = SFriendRequest(data.payload);
+
+    auto Response = _Repository->sendFriendRequest(InData.SenderUUID, InData.TargetUUID);
+    if (!Response.first)
+    {
+        Exit(data);
+        return;
+    }
+
+    data.onResult(true, InData.ToJSON());
+}
+
+void CmdFriendAccept::execute(const BDTask& data)
+{
+    if (!_Repository)
+    {
+        Exit(data);
+        return;
+    }
+    SFriendAccept InData = SFriendAccept(data.payload);
+
+    auto Response = _Repository->handleFriendResponse(InData.SenderUUID, InData.TargetUUID, InData.Action);
+    if (!Response)
+    {
+        Exit(data);
+        return;
+    }
+
+    data.onResult(true, InData.ToJSON());
+}
+
+void CmdRequestUserPassport::execute(const BDTask& data)
+{
+    if (!_Repository)
+    {
+        Exit(data);
+        return;
+    }
+    SUserPassport InData = SUserPassport(data.payload);
+
+    auto Response = _Repository->loadUserPassport(InData);
+    if (!Response)
+    {
+        Exit(data);
+        return;
+    }
+
+    data.onResult(true, InData.ToJSON());
+}
+
+void CmdSearchUsers::execute(const BDTask& data)
+{
+    if (!_Repository)
+    {
+        Exit(data);
+        return;
+    }
+    SSearchUserBD InData = SSearchUserBD(data.payload);
+
+    auto Response = _Repository->searchUsersByUsername(InData.userUUID, InData._SearchUsersData);
+    if (!Response)
+    {
+        Exit(data);
+        return;
+    }
+
+    data.onResult(true, InData.ToJSON());
 }

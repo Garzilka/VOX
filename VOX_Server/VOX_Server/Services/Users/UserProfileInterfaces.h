@@ -6,13 +6,13 @@ class IUserProfileCacheService
 {
 public:
     virtual void warmup(std::function<void(string userUUID)> Success, string userUUID) = 0;
-    virtual void getUserPassport(const string& responseClientUUID, const string& targetClientUUID, SUserPassport& newPassport) = 0;
-    virtual void getUserDetails(const string& responseClientUUID, const string& targetClientUUID, SUserPassport& newPassport) = 0;
+    virtual bool getUserPassport(const string& responseClientUUID, SUserPassport& newPassport) = 0;
+    //virtual void getUserDetails(const string& responseClientUUID, const string& targetClientUUID, SUserPassport& newPassport) = 0;
 };
 
-class IUserService {
+class ISearchUserService {
 public:
-    void handleSearchUsers(shared_ptr<Client> client, const JsonObject& data);
+    virtual void handleSearchUsers(const string& responseClientUUID, const SSearchUsersData& data) = 0;
 };
 
 class IDBUserService {

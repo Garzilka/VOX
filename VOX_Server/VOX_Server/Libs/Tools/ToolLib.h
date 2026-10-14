@@ -5,6 +5,42 @@ class ToolLib
 {
 public:
 
+    static string generateJWT(string apiKey, string apiSecret, string userUUID, string channelUUID)
+    {
+        // Header
+        JsonObject header;
+        header["alg"] = "HS256";
+        header["typ"] = "JWT";
+        std::string headerJson = header.dump();
+        std::vector<unsigned char> headerBytes(headerJson.begin(), headerJson.end());
+        std::string encodedHeader = toBase64Url(headerBytes);
+
+        // Payload
+        JsonObject payload;
+        payload["iss"] = apiKey;
+        payload["sub"] = userUUID;
+        int64_t expSeconds = currentSecondsSinceEpochPrecise() + (2 * 60 * 60);
+        payload["exp"] = expSeconds;
+
+        JsonObject videoGrant;
+        videoGrant["roomJoin"] = true;
+        videoGrant["room"] = channelUUID;
+        videoGrant["canPublish"] = true;
+        videoGrant["canSubscribe"] = true;
+
+        payload["video"] = videoGrant;
+        string payloadJson = payload.dump();
+        vector<unsigned char> payloadBytes(payloadJson.begin(), payloadJson.end());
+        string encodedPayload = toBase64Url(payloadBytes);
+
+        string signingInput = encodedHeader + "." + encodedPayload;
+
+        string encodedSignature = hmacSha256Base64Url(signingInput, apiSecret);
+
+        string finalJwtToken = encodedHeader + "." + encodedPayload + "." + encodedSignature;
+        return finalJwtToken;
+    }
+    static void fillPendingList(vector<string>& result, unordered_set<string>& source);
     static string generateUuid()
     {
         static std::mt19937_64 rng(

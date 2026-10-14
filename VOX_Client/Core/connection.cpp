@@ -1,6 +1,7 @@
 ﻿#include "connection.h"
 #include "Core/UIManager/uimanager.h"
 #include <QSettings>
+#include <QtEndian>
 
 QConnection::QConnection(QObject *parent) : QObject(parent)
 {
@@ -14,6 +15,7 @@ QConnection::QConnection(QObject *parent) : QObject(parent)
     connect(m_socket, &QTcpSocket::disconnected, this, &QConnection::onDisconnected);
     connect(m_socket, &QTcpSocket::errorOccurred, this, &QConnection::onErrorOccurred);
     connectToServer("127.0.0.1", 55);
+    //connectToServer("212.109.198.185", 55);
 }
 
 void QConnection::connectToServer(const QString &host, quint16 port)
@@ -47,10 +49,7 @@ bool QConnection::sendMessage(const SBaseMessageData &_Message)
 {
     if(DebugMode) return true;
 
-    if (m_socket->state() != QAbstractSocket::ConnectedState)
-    {
-        qWarning() << "Транспорт | Ошибка: Нет соединения с сервером.";
-        emit authErrorReceived("Нет соединения с сервером");
+    if (m_socket->state() != QAbstractSocket::ConnectedState) {
         return false;
     }
 
@@ -61,9 +60,12 @@ bool QConnection::sendMessage(const SBaseMessageData &_Message)
         data = cryptolib->encryptMessage(data);
     }
 
+    // ИСПРАВЛЕНИЕ: Конвертируем размер в сетевой порядок байт (Big-Endian)
     quint32 size = data.size();
+    quint32 sizeBE = qToBigEndian<quint32>(size);
+
     QByteArray packet;
-    packet.append(reinterpret_cast<const char*>(&size), 4);
+    packet.append(reinterpret_cast<const char*>(&sizeBE), 4); // Записываем корректные байты
     packet.append(data);
 
     m_socket->write(packet);
@@ -109,14 +111,11 @@ void QConnection::onReadyRead()
         case ETypeOfMessage::FriendAccept:
             // Сигнал, что кто-то принял/отклонил дружбу
             break;
-        case ETypeOfMessage::Friends:
-            if(Data.Response) ResponseFriendsList(MainObject);
+        case ETypeOfMessage::Relations:
+            if(Data.Response) ResponseRelations(MainObject);
             break;
         case ETypeOfMessage::SearchUsers:
             if(Data.Response) ResponseSearchUsers(MainObject);
-            break;
-        case ETypeOfMessage::Friendships:
-            if(Data.Response) ResponseFriendships(MainObject);
             break;
         case ETypeOfMessage::ChannelCreate:
             if(Data.Response) ResponseOpenOrCreateChat(MainObject);
@@ -130,26 +129,19 @@ void QConnection::onReadyRead()
         case ETypeOfMessage::ServerAccept:
             if(Data.Response) ResponseAcceptInvite(MainObject);
             break;
-        case ETypeOfMessage::ChannelsPrivate:
-            if(Data.Response) ResponseDirectChats(MainObject);
-            break;
         case ETypeOfMessage::ServerDetails:
             if(Data.Response) ResponseServerDetails(MainObject);
             break;
         case ETypeOfMessage::UserPassport:
-            if(Data.Response) ResponseOpenUsersData(MainObject);
+            if(Data.Response) ResponseUserPassport(MainObject);
             break;
-        case ETypeOfMessage::ServerList:
-            if(Data.Response) ResponseServersList(MainObject);
-            break;
-        // ДОБАВЛЕНО: Обработка прилетевших паспортов серверов
         case ETypeOfMessage::ServerPassport:
             if(Data.Response) ResponseServerShortData(MainObject);
             break;
-        case ETypeOfMessage::ChannelJoin: // RequestJoinVoice
+        case ETypeOfMessage::ChannelJoin:
             if (Data.Response) ResponseVoiceUserJoined(MainObject);
             break;
-        case ETypeOfMessage::ChannelLeave: // RequestLeaveVoice
+        case ETypeOfMessage::ChannelLeave:
             if (Data.Response) ResponseVoiceUserLeft(MainObject);
             break;
         default:
@@ -219,7 +211,11 @@ void QConnection::ResponseCrypto(QJsonObject &JSONObject)
     SCyptsKeysData ResponseCryptMessage(cryptolib->getPublicKeyDER().toBase64());
     sendMessage(ResponseCryptMessage);
 
-    if (!cryptolib->computeSharedSecret(peerKey)) qDebug() << "Крипто | Ошибка общего секрета";
+    if (!cryptolib->computeSharedSecret(peerKey))
+    {
+
+        qDebug() << "Крипто | Ошибка общего секрета";
+    }
 
     QUIManager::getInstance().setSecuritySuccessfully(true);
 }
@@ -241,7 +237,7 @@ void QConnection::ResponseAuth(QJsonObject &JSONObject)
             settings.setValue("auth/remember_me", true);
         }
 
-        requestOpenDataUsers({ UUID });
+        requestUserPassport({ UUID });
         QUIManager::getInstance().setMainUIState(1); // Прыгаем в главное окно чата
     }
     else
@@ -291,25 +287,30 @@ void QConnection::logout()
     QUIManager::getInstance().setMainUIState(0);
 }
 
-void QConnection::requestOpenDataUsers(const QList<QString>& UUIDs)
+void QConnection::requestUserPassport(const QList<QString>& UUIDs)
 {
     for(const QString& userUUID : UUIDs)
     {
-        SRequestUserPassport msg;
-        msg.userUUID = userUUID;
+        if(userUUID.isEmpty()) continue;
+
+        SUserPassport msg;
+        msg.UUID = userUUID;
         sendMessage(msg);
     }
 }
 
-void QConnection::ResponseOpenUsersData(QJsonObject &JSONObject)
+void QConnection::ResponseUserPassport(QJsonObject &JSONObject)
 {
-    SRequestUserPassport data(JSONObject);
+    SUserPassport data(JSONObject);
+    if(!data.Response) return;
+    if(data.UUID.isEmpty()) return;
+
     QVariantList usersList;
     QVariantMap uMap;
-    uMap["UUID"] = data.userPassport.UUID;
-    uMap["displayName"] = data.userPassport.DisplayName;
-    uMap["avatarUrl"] = data.userPassport.AvatarUrl;
-    uMap["presenceStatus"] = data.userPassport.PresenceStatus;
+    uMap["guid"] = data.UUID;
+    uMap["displayName"] = data.DisplayName;
+    uMap["avatarUrl"] = data.AvatarUrl;
+    uMap["presenceStatus"] = data.PresenceStatus;
     usersList.append(uMap);
     emit batchUsersLoaded(usersList);
 

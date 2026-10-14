@@ -78,6 +78,33 @@
     <ClCompile Include="Services\Presence\SearchUserService.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Libs\Tools\ToolLib.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Services\Relation\Impl\RelationCacheService.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Services\Relation\Impl\FriendService.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Services\Users\Impl\SearchUserService.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Services\Channel\Impl\ChannelCacheServiceImpl.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Services\Channel\Impl\ChannelHandlerServiceImpl.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Services\Server\Impl\MakeServerService.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Services\Server\Impl\CacheServerService.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Dispatch\BD_Dispatcher.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h">
@@ -197,9 +224,6 @@
     <ClInclude Include="Services\Server\Impl\MakeServerService.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="Services\Server\Impl\DBServerService.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="Services\Common\CommonInterfaces.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
@@ -242,7 +266,25 @@
     <ClInclude Include="Services\Relation\Impl\FriendService.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="Services\Relation\Impl\IFriendCacheService.h">
+    <ClInclude Include="Services\Relation\Impl\RelationCacheService.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\Users\Impl\SearchUserService.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\MessagePacket\DifferentsData.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\MessagePacket\UsersData.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\Channel\ChannelInterfaces.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\Channel\Impl\ChannelCacheServiceImpl.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\Channel\Impl\ChannelHandlerServiceImpl.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

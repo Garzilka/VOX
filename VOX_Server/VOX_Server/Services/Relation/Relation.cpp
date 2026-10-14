@@ -1,11 +1,5 @@
 #include "Relation.h"
 
-void Relation::fillPendingList(vector<string>& result, unordered_set<string>& source)
-{
-    result.reserve(source.size());
-    result.assign(source.begin(), source.end());
-    source.clear();
-}
 
 bool Relation::getUserRelations(SUserRelations& outRelations, const string& clientUUID)
 {
@@ -19,6 +13,39 @@ bool Relation::getUserRelations(SUserRelations& outRelations, const string& clie
 
     outRelations = _UserRelations;
     return true;
+}
+
+void Relation::addNewFriend(const string& targetClientUUID)
+{
+    std::lock_guard<mutex> lock(_ServerMutex);
+    _UserRelations.IncRequestFriend.erase(targetClientUUID);
+    _UserRelations.OutcRequestFrined.erase(targetClientUUID);
+    _UserRelations.friendsUUID.insert(targetClientUUID);
+}
+
+void Relation::addRequestFriend(const string& targetClientUUID)
+{
+    std::lock_guard<mutex> lock(_ServerMutex);
+    _UserRelations.friendsUUID.erase(targetClientUUID);
+    if (targetClientUUID == _UserRelations.userOwnerUUID)
+    {
+        _UserRelations.IncRequestFriend.insert(targetClientUUID);
+    }
+    else
+    {
+        _UserRelations.OutcRequestFrined.insert(targetClientUUID);
+    }
+}
+
+void Relation::removeFriend(const string& targetClientUUID)
+{
+    _UserRelations.friendsUUID.erase(targetClientUUID);
+}
+
+void Relation::removeRequestFriend(const string& targetClientUUID)
+{
+    _UserRelations.IncRequestFriend.erase(targetClientUUID);
+    _UserRelations.OutcRequestFrined.erase(targetClientUUID);
 }
 
 
@@ -55,7 +82,7 @@ bool Relation::setUserRelations(SUserRelations newUserelations, vector<string>& 
         _UserRelations = std::move(newUserelations);
         userUUID = _UserRelations.userOwnerUUID;
 
-        fillPendingList(result_Pendings, _RelationsPendingClients);
+        ToolLib::fillPendingList(result_Pendings, _RelationsPendingClients);
 
         localCallbacks = Callbacks;
         Callbacks.clear();

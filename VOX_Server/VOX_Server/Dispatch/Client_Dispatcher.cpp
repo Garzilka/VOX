@@ -1,6 +1,8 @@
 #include "Client_Dispatcher.h"
 #include "Client_Commands/Commands.h"
 #include "../Services/Common/CommonInterfaces.h"
+#include "../Services/Relation/RelationshipInterfaces.h"
+#include "../Services/Users/UserProfileInterfaces.h"
 
 ClientMessageDispatcher::ClientMessageDispatcher(const ContainerContext& in_ctx) : m_ctx(in_ctx)
 {
@@ -17,23 +19,29 @@ ClientMessageDispatcher::ClientMessageDispatcher(const ContainerContext& in_ctx)
             registerHandler(ETypeOfMessage::AppVersion,     std::make_shared<RequestAppVersionHandler>(Service));
         }
     }
-
-    //registerHandler(ETypeOfMessage::Message,                    std::make_shared<MessageHandler>());
-    //registerHandler(ETypeOfMessage::RequestDirectChats,         std::make_unique<RequestDirectChatsHandler>());
-    //registerHandler(ETypeOfMessage::RequestHistoryChannel,      std::make_unique<RequestHistoryChannelHandler>());
-    //registerHandler(ETypeOfMessage::OpenOrCreateChat,           std::make_unique<OpenOrCreateChatHandler>());
-    //registerHandler(ETypeOfMessage::FriendRequest,              std::make_shared<RequestFriendHandler>());
-    //registerHandler(ETypeOfMessage::FriendAccept,               std::make_shared<ResponseFriendHandler>());
-    //registerHandler(ETypeOfMessage::FriendsList,                std::make_shared<RequestFriendsListHandler>());
-    //registerHandler(ETypeOfMessage::UserPassport,               std::make_shared<RequestOpenUsersDataHandler>());
-    //registerHandler(ETypeOfMessage::CreateServer,               std::make_unique<CreateServerHandler>());
-    //registerHandler(ETypeOfMessage::RequestServerDetails,       std::make_unique<RequestServerDetailsHandler>());
-    //registerHandler(ETypeOfMessage::RequestServerShortData,     std::make_unique<RequestServerShortDataHandler>());
-    //registerHandler(ETypeOfMessage::GenerateInvite,             std::make_unique<GenerateInviteHandler>());
-    //registerHandler(ETypeOfMessage::AcceptInvite,               std::make_unique<AcceptInviteHandler>());
-    //registerHandler(ETypeOfMessage::RequestJoinVoice,           std::make_unique<RequestJoinVoiceHandler>());
-    //registerHandler(ETypeOfMessage::RequestLeaveVoice,          std::make_unique<RequestLeaveVoiceHandler>());
-    //registerHandler(ETypeOfMessage::SearchUsers,                std::make_shared<RequestSearchUsersHandler>());
+    if (m_ctx.CacheServices)
+    {
+        if (auto Service = m_ctx.CacheServices->resolve<IRelationCacheService>())
+        {
+            registerHandler(ETypeOfMessage::Relations, std::make_shared<RequestRelationsHandler>(Service));
+        }
+        if (auto Service = m_ctx.RelationServices->resolve<IFriendService>())
+        {
+            registerHandler(ETypeOfMessage::FriendRequest, std::make_unique<FriendRequestHandler>(Service));
+            registerHandler(ETypeOfMessage::FriendAccept, std::make_unique<FriendAcceptHandler>(Service));
+        }
+        if (auto Service = m_ctx.CacheServices->resolve<IUserProfileCacheService>())
+        {
+            registerHandler(ETypeOfMessage::UserPassport, std::make_unique<RequestUsersPassportHandler>(Service));
+        }
+    }
+    if (m_ctx.UsersServices)
+    {
+        if (auto Service = m_ctx.UsersServices->resolve<ISearchUserService>())
+        {
+            registerHandler(ETypeOfMessage::SearchUsers, std::make_unique<RequestSearchUsersHandler>(Service));
+        }
+    }
 }
 
 asio::awaitable<void> ClientMessageDispatcher::dispatch(ETypeOfMessage type, const JsonObject& data, shared_ptr<Client> sender)
@@ -46,6 +54,7 @@ asio::awaitable<void> ClientMessageDispatcher::dispatch(ETypeOfMessage type, con
     else
     {
         cerr << "[Dispatcher] Неизвестный тип сообщения: " << static_cast<int>(type) << "\n";
+        cerr << endl;
     }
     co_return;
 }

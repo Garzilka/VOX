@@ -16,10 +16,10 @@ class CacheUserServiceImpl : public IUserProfileCacheService,
     asio::io_context& m_ioContext;
     BDTaskQueue& m_bdQueue;
 public:
-    CacheUserServiceImpl(asio::io_context& ioCtx, BDTaskQueue& bdQueue)
-        : m_ioContext(ioCtx), m_bdQueue(bdQueue) {}
+    CacheUserServiceImpl(asio::io_context& ioCtx, BDTaskQueue& bdQueue, shared_ptr<INotificationService> in_NotificationService)
+        : m_ioContext(ioCtx), m_bdQueue(bdQueue), notificationService(in_NotificationService) {}
 
-    virtual void getUserPassport(const string& responseClientUUID, const string& targetClientUUID, SUserPassport& newPassport) = 0;
+    virtual bool getUserPassport(const string& responseClientUUID, SUserPassport& newPassport) override;
 
     virtual void warmup(std::function<void(string userUUID)> Success, string userUUID) override;
 private:

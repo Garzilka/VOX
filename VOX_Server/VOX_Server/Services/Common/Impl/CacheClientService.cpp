@@ -18,6 +18,7 @@ bool CacheClientServiceImpl::addNewClient(shared_ptr<Client> client)
 
     if (socketDesc.empty()) return false;
 
+    CLIENT_INFO("New client complete Descriptor: " + socketDesc);
     m_unauthorizedClients.try_emplace(std::move(socketDesc), std::move(client));
     return true;
 }
@@ -29,9 +30,14 @@ bool CacheClientServiceImpl::authComplete(const string& clientUUID, const string
     std::lock_guard<mutex> lock(_Mutex);
 
     shared_ptr<Client> authorizedClientPtr = takeClient(m_unauthorizedClients, socketDescriptor);
-    if (!authorizedClientPtr) return false;
-
+    if (!authorizedClientPtr)
+    {
+        CLIENT_WARNING("Can't auth complete for: " + socketDescriptor);
+        return false;
+    }
+    authorizedClientPtr->setUUID(clientUUID);
     m_activeClients.try_emplace(std::move(clientUUID), std::move(authorizedClientPtr));
+    CLIENT_INFO("Auth complete client UUID: " + clientUUID);
     return true;
 }
 
@@ -62,6 +68,13 @@ void CacheClientServiceImpl::removeClient(shared_ptr<Client> client)
     string socketDesc = client->getSocketDescriptor();
     string uuid = client->getUUID();
 
+    if (uuid.empty() && socketDesc.empty())
+    {
+        CLIENT_WARNING("Can't remove client Descriptor: " + socketDesc);
+        CLIENT_WARNING("Can't remove client UUID: " + uuid);
+        return;
+    }
+
     std::lock_guard<mutex> lock(_Mutex);
 
     if (!uuid.empty())
@@ -73,6 +86,7 @@ void CacheClientServiceImpl::removeClient(shared_ptr<Client> client)
     {
         m_unauthorizedClients.erase(socketDesc);
     }
+    CLIENT_INFO("Complete remove client UUID: " + uuid);
 }
 shared_ptr<Client> CacheClientServiceImpl::takeClient(unordered_map<string, shared_ptr<Client>>& map, const string& socketID)
 {

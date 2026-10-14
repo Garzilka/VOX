@@ -12,6 +12,4 @@ public:
         cacheService(in_CacheService) {}
 
     virtual void handleNewConnection(shared_ptr<Client> client) override;
-
-    virtual void handleClientDisconnected(shared_ptr<Client> client) override;
 };

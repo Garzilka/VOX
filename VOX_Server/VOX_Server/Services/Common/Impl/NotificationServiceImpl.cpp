@@ -1,10 +1,10 @@
 #include "NotificationServiceImpl.h"
 
-void NotificationServiceImpl::NotifyClients(const vector<string> clietnsUUID, const SBaseMessageData Message)
+void NotificationServiceImpl::NotifyClients(const vector<string> clietnsUUID, const SBaseMessageData& Message)
 {
 	if (!cacheService)
 	{
-		ERROR_CLIENT("No cache servive fot notify");
+		CLIENT_ERROR("No cache servive for notify");
 		return;
 	}
 	for (const string& clientUUID : clietnsUUID)

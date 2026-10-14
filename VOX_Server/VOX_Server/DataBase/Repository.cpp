@@ -18,21 +18,27 @@
 #include "Rules/CheckServerMembersRule.h"
 
 
+// =========================================================================
+// Вспомогательные функции на чистом C++ для замены Qt-утилит
+// =========================================================================
 
-static string toLowerTrimmed(string str) 
-{
+static string toLowerTrimmed(string str) {
+    // Trim в начале
     str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](unsigned char ch) {
         return !std::isspace(ch);
         }));
+    // Trim в конце
     str.erase(std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) {
         return !std::isspace(ch);
         }).base(), str.end());
+    // В нижний регистр
     std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
         return std::tolower(c);
         });
     return str;
 }
 
+// Простейшая генерация UUID v4 без сторонних библиотек
 static string generateUUID() 
 {
     static std::random_device rd;
@@ -100,20 +106,6 @@ void Repository::PrepareQueries()
         "INSERT INTO users (username, display_name, email, password_hash, salt, status) VALUES ($1, $2, $3, $4, $5, 0) RETURNING id;");
 
     _SQL_Connection->prepare("has_account", "SELECT EXISTS(SELECT 1 FROM users WHERE username = $1);");
-
-    _SQL_Connection->prepare("get_friends", R"(
-        SELECT u.id AS friend_id, u.username, u.display_name, u.avatar_url, u.status AS global_status,
-            CASE
-                WHEN f.status = 'accepted' THEN 2
-                WHEN f.status = 'blocked' AND f.user_id = $1 THEN 3
-                WHEN f.status = 'pending' AND f.user_id = $1 THEN 0
-                WHEN f.status = 'pending' AND f.friend_id = $1 THEN 1
-                ELSE -1
-            END AS relation_type
-        FROM friends f
-        JOIN users u ON ((f.user_id = $1 AND u.id = f.friend_id) OR (f.friend_id = $1 AND u.id = f.user_id))
-        WHERE (f.user_id = $1 OR f.friend_id = $1) AND NOT (f.status = 'blocked' AND f.friend_id = $1);
-    )");
 
     _SQL_Connection->prepare("search_users",
         "SELECT id, username, display_name, avatar_url, status FROM users WHERE username ILIKE '%' || $1 || '%' AND id <> $2 LIMIT 20;");
@@ -204,6 +196,15 @@ void Repository::PrepareQueries()
         "get_server_members_short",
         "SELECT user_id, role_id FROM server_members WHERE server_id = $1;"
     );
+    _SQL_Connection->prepare("get_user_relations", 
+        R"( SELECT CASE WHEN user_id = $1 THEN friend_id ELSE user_id END AS related_user_id, status, CASE WHEN user_id = $1 THEN true 
+            ELSE false END AS is_owner_sender FROM friends WHERE user_id = $1 OR friend_id = $1;)");
+
+    _SQL_Connection->prepare("load_user_passport",
+        "SELECT display_name, avatar_url, status FROM users WHERE id = $1 LIMIT 1;");
+
+    _SQL_Connection->prepare("get_user_joined_servers",
+        "SELECT server_id FROM server_members WHERE user_id = $1;");
 }
 
 #pragma region CORE {
@@ -346,83 +347,28 @@ bool Repository::HasAccount(const string& _Username)
     catch (...) {}
     return true;
 }
-vector<SUserPassport> Repository::getFriendsList(const string& myUUID)
+
+bool Repository::searchUsersByUsername(const string& myUUID, SSearchUsersData& searchQuery)
 {
-    vector<SUserPassport> list;
+    searchQuery.Results.clear();
+    string queryTrimmed = toLowerTrimmed(searchQuery.SearchQuery);
+    if (queryTrimmed.empty()) return false;
     try 
     {
-        pqxx::work tx(*_SQL_Connection);
-        pqxx::result res = tx.exec(pqxx::prepped("get_friends"), pqxx::params{ myUUID });
-
-        for (auto row : res) 
-        {
-            int relationType = row["relation_type"].as<int>();
-            if (relationType == -1) continue;
-
-            SUserPassport info;
-            info.UUID = row["friend_id"].as<string>();
-            info.DisplayName = row["display_name"].as<string>();
-            info.AvatarUrl = row["avatar_url"].as<string>();
-            info.RelationStatus = relationType;
-            int rawStatus = row["global_status"].as<int>();
-            info.PresenceStatus = (rawStatus == 4) ? 0 : rawStatus;
-            list.push_back(info);
-        }
-    }
-    catch (...) {}
-    return list;
-}
-vector<SUserPassport> Repository::searchUsersByUsername(const string& myUUID, const string& searchQuery)
-{
-    vector<SUserPassport> results;
-    string queryTrimmed = toLowerTrimmed(searchQuery);
-    if (queryTrimmed.empty()) return results;
-    try {
         pqxx::work tx(*_SQL_Connection);
         pqxx::result res = tx.exec(pqxx::prepped("search_users"), pqxx::params{ queryTrimmed, myUUID });
-        for (auto row : res) {
-            SUserPassport info;
-            info.UUID = row["id"].as<string>();
-            info.DisplayName = row["display_name"].as<string>();
-            info.AvatarUrl = row["avatar_url"].as<string>();
-            info.RelationStatus = -1;
-            int rawStatus = row["status"].as<int>();
-            info.PresenceStatus = (rawStatus == 4) ? 0 : rawStatus;
-            results.push_back(info);
+        for (auto row : res) 
+        {
+            searchQuery.Results.push_back(row["id"].as<string>());
         }
     }
-    catch (...) {}
-    return results;
-}
-
-vector<SUserPassport> Repository::getBatchUsersFromDB(const vector<string>& UUIDs)
-{
-    vector<SUserPassport> results;
-    if (UUIDs.empty()) return results;
-
-    try 
+    catch (...) 
     {
-        pqxx::work tx(*_SQL_Connection);
-        std::stringstream ss;
-        ss << "SELECT id, username, display_name, avatar_url, status FROM users WHERE id IN (";
-        for (size_t i = 0; i < UUIDs.size(); ++i) {
-            ss << tx.quote(UUIDs[i]) << (i == UUIDs.size() - 1 ? "" : ",");
-        }
-        ss << ");";
-        pqxx::result res = tx.exec(ss.str());
-        for (auto row : res) {
-            SUserPassport info;
-            info.UUID = row["id"].as<string>();
-            info.DisplayName = row["display_name"].as<string>();
-            info.AvatarUrl = row["avatar_url"].as<string>();
-            int rawStatus = row["status"].as<int>();
-            info.PresenceStatus = (rawStatus == 4) ? 0 : rawStatus;
-            results.push_back(info);
-        }
+        return false;
     }
-    catch (...) {}
-    return results;
+    return true;
 }
+
 
 pair<bool, string> Repository::sendFriendRequest(const string& senderUUID, const string& targetUsername)
 {
@@ -441,14 +387,12 @@ pair<bool, string> Repository::sendFriendRequest(const string& senderUUID, const
 
         string targetUUID = res[0][0].as<string>();
 
-        // 2. Проверка на самого себя
         if (senderUUID == targetUUID) 
         {
             result.second = "Cannot add self as friend";
             return result;
         }
 
-        // 3. Проверка дружбы
         pqxx::result checkRes = tx.exec(pqxx::prepped("check_friendship_exists"), pqxx::params{ senderUUID, targetUUID });
         if (!checkRes.empty())
         {
@@ -465,12 +409,13 @@ pair<bool, string> Repository::sendFriendRequest(const string& senderUUID, const
     }
     catch (const pqxx::sql_error& e) 
     {
+        // Ловим ошибки SQL конкретно
         spdlog::error("[DB] SQL Error in addFriendRequest: {}", e.what());
         result.second = "Database SQL Error: " + string(e.what());
         return result;
     }
-    catch (const std::exception& e) 
-    {
+    catch (const std::exception& e) {
+        // Ловим общие ошибки (сеть, таймауты)
         spdlog::error("[DB] General Error in addFriendRequest: {}", e.what());
         result.second = "Internal Server Error: " + string(e.what());
         return result;
@@ -495,6 +440,98 @@ bool Repository::handleFriendResponse(const string& myUUID, const string& target
     catch (...) {}
     return false;
 }
+
+bool Repository::getUserRelations(const string& myUUID, SUserRelations& Result)
+{
+    try
+    {
+        pqxx::work tx(*_SQL_Connection);
+        pqxx::result res = tx.exec(pqxx::prepped("get_user_relations"), pqxx::params{ myUUID });
+
+        Result.friendsUUID.clear();
+        Result.IncRequestFriend.clear();
+        Result.OutcRequestFrined.clear();
+
+        for (auto row : res)
+        {
+            string relatedUUID = row["related_user_id"].as<string>();
+            string status = row["status"].as<string>();
+            bool isOwnerSender = row["is_owner_sender"].as<bool>();
+
+            if (status == "accepted")
+            {
+                Result.friendsUUID.insert(relatedUUID);
+            }
+            else if (status == "pending")
+            {
+                if (isOwnerSender)
+                {
+                    Result.OutcRequestFrined.insert(relatedUUID);
+                }
+                else
+                {
+                    Result.IncRequestFriend.insert(relatedUUID);
+                }
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        spdlog::error("[DB] Error in getUserRelations for {}: {}", myUUID, e.what());
+        return false;
+    }
+
+    return true;
+}
+
+bool Repository::loadUserPassport(SUserPassport& Result)
+{
+    if (Result.UUID.empty()) return false;
+
+    try
+    {
+        pqxx::work tx(*_SQL_Connection);
+
+        pqxx::result userRes = tx.exec(
+            pqxx::prepped("load_user_passport"),
+            pqxx::params{ Result.UUID }
+        );
+
+        if (userRes.empty())
+        {
+            spdlog::warn("[DB] User passport not found for UUID: {}", Result.UUID);
+            return false;
+        }
+
+        auto row = userRes[0];
+        Result.DisplayName = row["display_name"].as<string>();
+        Result.AvatarUrl = row["avatar_url"].is_null() ? "" : row["avatar_url"].as<string>();
+        int rawStatus = row["status"].as<int>();
+        Result.PresenceStatus = rawStatus;
+
+        pqxx::result serversRes = tx.exec(
+            pqxx::prepped("get_user_joined_servers"),
+            pqxx::params{ Result.UUID }
+        );
+
+        Result.joinedServersUUID.clear();
+        for (auto serverRow : serversRes)
+        {
+            if (!serverRow["server_id"].is_null())
+            {
+                Result.joinedServersUUID.insert(serverRow["server_id"].as<string>());
+            }
+        }
+
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        spdlog::error("[DB] Error in loadUserPassport for UUID {}: {}", Result.UUID, e.what());
+    }
+    return false;
+}
+
 string Repository::findPrivateChannel(const string& senderUUID, const string& targetUUID)
 {
     try 
@@ -715,6 +752,8 @@ bool Repository::createServerInDB(const SMakeServerTask& result_MakeTask, SServe
     try
     {
         pqxx::work tx(*_SQL_Connection);
+
+        // 1. Выполняем вставку сервера и получаем возвращаемые базой данные
         pqxx::result res = tx.exec(pqxx::prepped("insert_server"), pqxx::params{ result_MakeTask.Name, result_MakeTask.userUUID });
 
         if (!res.empty())

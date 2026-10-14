@@ -2,33 +2,17 @@
 #include "Data/MessagesIncluds.h"
 
 
-class IMakeServerService {
+class IServerService {
 public:
-    virtual void makeServer(const string userUUID, const JsonObject& obj) = 0;
+    virtual void makeServer(const string userUUID, const SCreateServerData& Req) = 0;
+    virtual void ServerInvite(const string userUUID, const SGenerateInviteData& Req) = 0;
+    virtual void ServerAccept(const string userUUID, const SAcceptInviteData& obj) = 0;
 };
 
-
-class IDBServerService {
+class ICacheServerService 
+{
 public:
-    virtual void requestMakeServerInDB(const string userUUID, const JsonObject& obj) = 0;
-    virtual void requestPassportInDB(const string& serverUUID) = 0;
-    virtual void requestDetailsInDB(const string& serverUUID) = 0;
-};
-
-class ICacheServerService {
-public:
-    virtual SGettedServerState findOrAddServer(const string& userUUID) = 0;
-    virtual void setServerToReady(const string& serverName, const string& beforeUUID) = 0;
-};
-
-class IPassportService {
-public:
-    virtual bool setServerPassport(SServerPassport) = 0;
-    virtual bool getServerPassport(SServerPassport&, const string&) = 0;
-};
-
-class IDetailsService {
-public:
-    virtual bool setServerDetails(const SServerDetailsData&) = 0;
-    virtual bool getServerDetails(SServerDetailsData&, const string&) = 0;
+    virtual bool getServerPassport(const string& userUUID , SServerPassport& Result) = 0;
+    virtual bool getServerDetails(const string& userUUID, SServerDetailsData& Result) = 0;
+    virtual bool setServerPassport(SServerPassport in_Data) = 0;
 };

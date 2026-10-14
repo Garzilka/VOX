@@ -5,21 +5,18 @@ void ConnectionClientServiceImpl::handleNewConnection(shared_ptr<Client> client)
 {
     if (!client) return;
     if (!cacheService) return;
-    INFO_CLIENT("Новое подключение: " + client->getSocketDescriptor());
+    CLIENT_INFO("Новое подключение: " + client->getSocketDescriptor());
 
-    client->subscribeOnDisconnect([&](const shared_ptr<Client>& c) 
+    auto cache = cacheService;
+    client->subscribeOnDisconnect([cache](const shared_ptr<Client>& c)
         {
-            handleClientDisconnected(c);
+            if (c && cache)
+            {
+                CLIENT_INFO("Отключился: " + c->getSocketDescriptor());
+                cache->removeClient(c);
+            }
         });
+
     cacheService->addNewClient(client);
     client->start();
-}
-
-void ConnectionClientServiceImpl::handleClientDisconnected(const shared_ptr<Client> client)
-{
-    if (!client) return;
-    if (!cacheService) return;
-
-    INFO_CLIENT("Отключился: "  + client->getSocketDescriptor());
-    cacheService->removeClient(client);
 }

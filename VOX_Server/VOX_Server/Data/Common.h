@@ -54,11 +54,23 @@ using ByteArray = std::vector<std::uint8_t>;
 
 #define INDEX_NONE -1
 
-#define INFO_CLIENT(msg, ...) spdlog::info("[CLIENT]: " msg, ##__VA_ARGS__);
-#define WARNING_CLIENT(msg, ...) spdlog::warn("[CLIENT]: " msg, ##__VA_ARGS__)
-#define ERROR_CLIENT(msg, ...) spdlog::error("[CLIENT]: " msg, ##__VA_ARGS__)
+#define INFO_Active 1
 
+#if INFO_Active
 
-#define LOG_INFO(msg, ...) spdlog::info("CLIENT MANAGER | " msg, ##__VA_ARGS__);
-#define LOG_WARNING(msg, ...) spdlog::warn("CLIENT MANAGER | " msg, ##__VA_ARGS__)
-#define LOG_ERROR(msg, ...) spdlog::error("CLIENT MANAGER | " msg, ##__VA_ARGS__)
+#define CLIENT_INFO(msg, ...) spdlog::info("[CLIENT]: " msg, ##__VA_ARGS__);
+#define USER_INFO(msg, ...) spdlog::info("[USER]: " msg, ##__VA_ARGS__);
+#define REPOSITORY_INFO(msg, ...) spdlog::info("[REPOSITORY]: " msg, ##__VA_ARGS__);
+#else
+
+#define CLIENT_INFO(msg, ...));
+#endif
+
+#define CLIENT_WARNING(msg, ...) spdlog::warn("[CLIENT]: " msg, ##__VA_ARGS__)
+#define CLIENT_ERROR(msg, ...) spdlog::error("[CLIENT]: " msg, ##__VA_ARGS__)
+
+#define USER_WARNING(msg, ...) spdlog::warn("[USER]: " msg, ##__VA_ARGS__)
+#define USER_ERROR(msg, ...) spdlog::error("[USER]: " msg, ##__VA_ARGS__)
+
+#define REPOSITORY_WARNING(msg, ...) spdlog::warn("[REPOSITORY]: " msg, ##__VA_ARGS__)
+#define REPOSITORY_ERROR(msg, ...) spdlog::error("[REPOSITORY]: " msg, ##__VA_ARGS__)

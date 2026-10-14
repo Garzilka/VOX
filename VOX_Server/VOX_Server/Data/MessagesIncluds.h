@@ -5,5 +5,7 @@
 #include "MessagePacket/FriendData.h"
 #include "MessagePacket/ChannelsData.h"
 #include "MessagePacket/ServerData.h"
+#include "MessagePacket/UsersData.h"
+#include "MessagePacket/DifferentsData.h"
 
 #endif // MessagesIncluds_H

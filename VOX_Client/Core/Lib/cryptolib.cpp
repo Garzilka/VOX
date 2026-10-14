@@ -107,6 +107,11 @@ bool QCryptoLib::computeSharedSecret(const QByteArray &peerPublicKeyDER)
     }
 
     EVP_PKEY_CTX_free(ctx);
+    if (m_hasSecret)
+    {
+        QString hexKey = QString::fromLatin1(m_aesKey.toHex());
+        qDebug() << "[CRYPTO] Client AES Key (Hex):" << hexKey;
+    }
     return ok;
 }
 

@@ -6,13 +6,12 @@
 
 class INotificationService {
 public:
-    virtual void NotifyClients(const vector<string> clietnsUUID, const SBaseMessageData Message) = 0;
+    virtual void NotifyClients(const vector<string> clietnsUUID, const SBaseMessageData& Message) = 0;
 };
 
 class IConnectionClientService {
 public:
     virtual void handleNewConnection(shared_ptr<Client> client) = 0;
-    virtual void handleClientDisconnected(const shared_ptr<Client> client) = 0;
 };
 
 class ICacheClientService {
@@ -33,7 +32,7 @@ public:
 
 class IAppVersionService {
 public:
-    virtual void handleAppVersionRequest(shared_ptr<Client> client, const JsonObject& data) = 0;
+    virtual void handleAppVersionRequest(shared_ptr<Client> client) = 0;
 };
 
 class IInviteService {

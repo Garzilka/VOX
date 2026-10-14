@@ -1,13 +1,6 @@
 #include "User.h"
 
 
-void User::fillPendingList(vector<string>& result, unordered_set<string>& source)
-{
-    result.reserve(source.size());
-    result.assign(source.begin(), source.end());
-    source.clear();
-}
-
 bool User::getUserPassport(SUserPassport& newPassport, const string& clientUUID)
 {
     if (!isValid())
@@ -58,7 +51,7 @@ bool User::setUserPassport(SUserPassport newUserPasport, vector<string>& result_
 
         if (!_isValid) return false;
 
-        fillPendingList(result_Pendings, _PassportPendingClients);
+        ToolLib::fillPendingList(result_Pendings, _PassportPendingClients);
 
         userUUID = _UserPassport.UUID;
         localCallbacks = Callbacks;

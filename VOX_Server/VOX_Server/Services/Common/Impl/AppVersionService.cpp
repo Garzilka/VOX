@@ -1,7 +1,7 @@
 #include "AppVersionService.h"
 #include "Client.h"
 
-void AppVersionServiceImpl::handleAppVersionRequest(shared_ptr<Client> client, const JsonObject& data)
+void AppVersionServiceImpl::handleAppVersionRequest(shared_ptr<Client> client)
 {
     if (!client) return;
 

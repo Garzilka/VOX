@@ -2,20 +2,94 @@
 #include "CoreData.h"
 
 
-struct SChannelHistoryData : public SBaseMessageData
+struct SAttachmentData
+{
+    EAttachmentType Type;
+    string Url;
+    string MetaData;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(SAttachmentData, Type, Url, MetaData)
+};
+
+struct SMessageData : public SBaseMessageData
+{
+    string RoomUUID = "";
+    string SenderUUID = "";
+    string Message = "";
+    vector<SAttachmentData> Attachments = {};
+
+    SMessageData(string _RoomUUID, string _SenderUUID, string _Message, ETypeOfMessage _TypeMessage = ETypeOfMessage::Message)
+        : SBaseMessageData(_TypeMessage), RoomUUID(_RoomUUID), SenderUUID(_SenderUUID),
+        Message(_Message) {
+    };
+
+    virtual ~SMessageData() {}
+
+    explicit SMessageData(const JsonObject& InJSON) : SBaseMessageData(InJSON)
+    {
+        RoomUUID = ToolLib::jsonGetValue<string>(InJSON, "RoomUUID", "");
+        SenderUUID = ToolLib::jsonGetValue<string>(InJSON, "SenderUUID", "");
+        Message = ToolLib::jsonGetValue<string>(InJSON, "Message", "");
+
+        if (InJSON.contains("Attachments") && InJSON["Attachments"].is_array())
+        {
+            Attachments = InJSON["Attachments"].get<vector<SAttachmentData>>();
+        }
+    }
+
+    static SMessageData FromJSON(const JsonObject& InJSON)
+    {
+        return SMessageData(InJSON);
+    }
+
+    virtual JsonObject ToJSON() const override
+    {
+        JsonObject messageObj = SBaseMessageData::ToJSON();
+        messageObj["RoomUUID"] = RoomUUID;
+        messageObj["SenderUUID"] = SenderUUID;
+        messageObj["Message"] = Message;
+        messageObj["Attachments"] = Attachments;
+
+        return messageObj;
+    }
+};
+inline void to_json(JsonObject& j, const SMessageData& d) { j = d.ToJSON(); }
+inline void from_json(const JsonObject& j, SMessageData& d) { d.FromJSON(j); }
+
+
+
+
+
+struct SChannelPassport : public SBaseMessageData
+{
+    string ChatUUID;
+    int ChatType = ETypeOfChat::DirectText;
+    string Name;
+    string ServerUUID;
+    string ParentUUID;
+    string Description;
+    vector<string> ParticipantUUIDs;
+    SChannelPassport() : SBaseMessageData(ETypeOfMessage::ChannelPassport) {};
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(SChannelPassport,
+        ChatUUID, ChatType, Name, ServerUUID, ParentUUID,
+        Description, ParticipantUUIDs
+    )
+};
+
+struct SChannelDetails : public SBaseMessageData
 {
     string RoomUUID;
     vector<SMessageData> Messages;
 
-    SChannelHistoryData(ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelDetails)
+    SChannelDetails(ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelDetails)
         : SBaseMessageData(_TypeMessage) {
     };
 
-    SChannelHistoryData(string _RoomUUID, ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelDetails)
+    SChannelDetails(string _RoomUUID, ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelDetails)
         : SBaseMessageData(_TypeMessage), RoomUUID(_RoomUUID) {
     };
 
-    SChannelHistoryData(const JsonObject& InJSON) : SBaseMessageData(InJSON)
+    SChannelDetails(const JsonObject& InJSON) : SBaseMessageData(InJSON)
     {
         RoomUUID = ToolLib::jsonGetValue<string>(InJSON, "RoomUUID");
         Messages.clear();
@@ -31,42 +105,6 @@ struct SChannelHistoryData : public SBaseMessageData
         JsonObject messageObj = SBaseMessageData::ToJSON();
         messageObj["RoomUUID"] = RoomUUID;
         messageObj["Messages"] = Messages;
-        return messageObj;
-    }
-};
-
-struct SChannelCreateData : public SBaseMessageData
-{
-    int ChatType = ETypeOfChat::DirectText;
-    string TargetUserUUID;
-    string ServerUUID;
-    string Name;
-    string ParentUUID;
-    SChannelPassport ChannelPassport;
-    SChannelCreateData(ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelCreate)
-        : SBaseMessageData(_TypeMessage) {};
-    SChannelCreateData(const JsonObject& InJSON) : SBaseMessageData(InJSON)
-    {
-        ChatType        =ToolLib::jsonGetValue<int>(InJSON, "ChatType");
-        TargetUserUUID  =ToolLib::jsonGetValue<string>(InJSON, "TargetUserUUID");
-        ServerUUID      =ToolLib::jsonGetValue<string>(InJSON, "ServerUUID");
-        Name            =ToolLib::jsonGetValue<string>(InJSON, "Name");
-        ParentUUID      =ToolLib::jsonGetValue<string>(InJSON, "ParentUUID");
-
-        if (InJSON.contains("ChannelPassport")) 
-        {
-            ChannelPassport = InJSON["ChannelPassport"].get<SChannelPassport>();
-        }
-    };
-    virtual JsonObject ToJSON() const override
-    {
-        JsonObject messageObj = SBaseMessageData::ToJSON();
-        messageObj["ChatType"] = ChatType;
-        messageObj["TargetUserUUID"] = TargetUserUUID;
-        messageObj["ServerUUID"] = ServerUUID;
-        messageObj["Name"] = Name;
-        messageObj["ParentUUID"] = ParentUUID;
-        messageObj["ChannelPassport"] = ChannelPassport;
         return messageObj;
     }
 };
@@ -105,17 +143,15 @@ struct SChatNotificationEvent : public SBaseMessageData
 
 struct SChannelJoin : public SBaseMessageData
 {
-    string ServerUUID;
     string ChannelUUID;
     string UserUUID;
-    string WebRTCToken; // ДОБАВЛЕНО: Токен для прямого UDP-подключения к LiveKit
+    string WebRTCToken;
 
     SChannelJoin(ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelJoin)
         : SBaseMessageData(_TypeMessage) {};
 
     SChannelJoin(const JsonObject& InJSON) : SBaseMessageData(InJSON)
     {
-        ServerUUID =ToolLib::jsonGetValue<string>(InJSON, "ServerUUID");
         ChannelUUID =ToolLib::jsonGetValue<string>(InJSON, "ChannelUUID");
         UserUUID =ToolLib::jsonGetValue<string>(InJSON, "UserUUID");
         WebRTCToken =ToolLib::jsonGetValue<string>(InJSON, "WebRTCToken");
@@ -124,10 +160,9 @@ struct SChannelJoin : public SBaseMessageData
     virtual JsonObject ToJSON() const override 
     {
         JsonObject obj = SBaseMessageData::ToJSON();
-        obj["ServerUUID"] = ServerUUID;
         obj["ChannelUUID"] = ChannelUUID;
         obj["UserUUID"] = UserUUID;
-        obj["WebRTCToken"] = WebRTCToken; // Добавлено
+        obj["WebRTCToken"] = WebRTCToken;
         return obj;
     }
 };

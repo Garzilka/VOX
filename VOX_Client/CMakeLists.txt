@@ -100,7 +100,7 @@ qt_add_qml_module(VOX_Client
 
         UI/Friends/FriendList/FriendList.qml
         UI/Friends/FriendList/FriendListItem.qml
-        UI/Friends/FriendList/FriendSearchWidget.qml
+        UI/Friends/Search/FriendSearchWidget.qml
 
         UI/Friends/Requestlist/FriendRequestsWidget.qml
 
@@ -124,6 +124,12 @@ qt_add_qml_module(VOX_Client
         QML_FILES UI/Common/Dialogs/CreateServerDialog.qml
         QML_FILES UI/Settings/Inputs/InputSettings.qml
         QML_FILES UI/Settings/Inputs/KeybindInput.qml
+        SOURCES Core/Data/UserData.h
+        SOURCES Core/Data/DifferentsData.h
+        QML_FILES UI/Friends/Search/SearchResultItem.qml
+        QML_FILES UI/Friends/Search/SearchResultList.qml
+        QML_FILES UI/Friends/Requestlist/RequestsListWidget.qml
+        QML_FILES UI/Friends/Requestlist/RequestsItemWidget.qml
 )
 
 set_target_properties(VOX_Client PROPERTIES

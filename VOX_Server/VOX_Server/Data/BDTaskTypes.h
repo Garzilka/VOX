@@ -6,15 +6,28 @@
 enum class EBDTaskType
 {
     None,
+    LoadUserPassport,
+    LoadUserDetails,
     CreateServer,
-    LoadPassport,
-    LoadDetails,
+    ServerInvite,
+    ServerAccept,
+    LoadServerPassport,
+    LoadServerDetails,
     GetServerList,
     UpdateStatus,
     LoadAppVersion,
     Login,
     TokenAuth,
     Registration,
+    LoadRelation,
+    FriendRequest,
+    FriendAccept,
+    SearchUser,
+    ChannelCreate,
+    LoadChannelPassport,
+    LoadChannelDetails,
+    ChannelJoin,
+    ChannelLeave,
 };
 
 struct BDTask
@@ -144,6 +157,27 @@ struct SAuthClientResponse
         JsonObject obj;
         obj["_UserpeerAddress"] = _UserpeerAddress;
         obj["_AuthorizationData"] = _AuthReponse.ToJSON();
+        return obj;
+    }
+};
+
+struct SSearchUserBD
+{
+    string userUUID;
+    SSearchUsersData _SearchUsersData;
+
+    SSearchUserBD() {};
+
+    SSearchUserBD(const JsonObject& Obj) : _SearchUsersData(Obj["SearchUsersData"])
+    {
+        userUUID = ToolLib::jsonGetValue<string>(Obj, "userUUID");
+    }
+
+    JsonObject ToJSON() const
+    {
+        JsonObject obj;
+        obj["userUUID"] = userUUID;
+        obj["SearchUsersData"] = _SearchUsersData.ToJSON();
         return obj;
     }
 };

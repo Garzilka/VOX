@@ -31,13 +31,12 @@ Rectangle
             delegate: ItemDelegate
             {
                 id: participantDelegateItem
-                width: participantsListView.width; height: 34
+                width: participantsListView.width;
+                height: 34
 
-                // Переводим свойства в динамические переменные (убираем readonly, чтобы их можно было форсированно обновлять)
                 property string uName: UserManager.getDisplayName(modelData)
                 property color uStatusColor: UserManager.getStatusColor(modelData)
 
-                // ФАКТ: Флаг загрузки определяет, крутится ли анимация для этой конкретной карточки
                 readonly property bool isLoading: participantDelegateItem.uName === "Загрузка..." || participantDelegateItem.uName === ""
 
                 background: Rectangle
@@ -45,23 +44,27 @@ Rectangle
                     color: participantDelegateItem.hovered ? "#35373c" : "transparent"; radius: 4
                 }
 
-                contentItem: RowLayout {
+                contentItem: RowLayout
+                {
                     anchors.fill: parent; anchors.leftMargin: 8; spacing: 10
 
                     // Аватарка со статусом
-                    Rectangle {
+                    Rectangle
+                    {
                         id: avatarCircle
                         width: 24; height: 24; radius: 12; color: "#5865f2"
 
                         // Анимация мягкой пульсации аватара во время ожидания батча сети
-                        SequentialAnimation on opacity {
+                        SequentialAnimation on opacity
+                        {
                             running: participantDelegateItem.isLoading
                             loops: Animation.Infinite
                             NumberAnimation { to: 0.4; duration: 600; easing.type: Easing.InOutQuad }
                             NumberAnimation { to: 1.0; duration: 600; easing.type: Easing.InOutQuad }
                         }
 
-                        Rectangle {
+                        Rectangle
+                        {
                             width: 8; height: 8; radius: 4
                             color: participantDelegateItem.uStatusColor
                             border.color: "#2b2d31"; border.width: 1
@@ -71,7 +74,8 @@ Rectangle
                     }
 
                     // Никнейм / Скелетон-текст
-                    Item {
+                    Item
+                    {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 16
 
@@ -87,19 +91,21 @@ Rectangle
                 }
 
                 // =============================================================
-                // ИСПРАВЛЕНО: Реактивный триггер обновления профилей участников
+                // Триггер обновления профилей участников
                 // =============================================================
                 Connections
                 {
                     target: UserManager // Слушаем твой глобальный синглтон менеджера пользователей
 
-                    function onDataChanged() {
+                    function onDataChanged()
+                    {
                         // Как только батч прилетел по сети — принудительно пересчитываем C++ методы для этого UUID
                         participantDelegateItem.uName = UserManager.getDisplayName(modelData)
                         participantDelegateItem.uStatusColor = UserManager.getStatusColor(modelData)
 
                         // Сбрасываем прозрачность аватарки в исходное монолитное состояние 1.0
-                        if (!participantDelegateItem.isLoading) {
+                        if (!participantDelegateItem.isLoading)
+                        {
                             avatarCircle.opacity = 1.0
                         }
                     }

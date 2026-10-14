@@ -10,10 +10,7 @@ Client::Client(TCPSoket socket, Core& _Core)
 }
 
 
-Client::~Client()
-{
-    disconnect();
-}
+Client::~Client(){}
 
 void Client::start() 
 {
@@ -23,18 +20,21 @@ void Client::start()
     }
     if (!_CryptoLib->generateKeyPair()) return;
 
-    auto executor = _socket.get_executor();
-    asio::co_spawn(_socket.get_executor(), readLoop(), asio::detached);
-    asio::co_spawn(_socket.get_executor(), WriteLoop(), asio::detached);
+    auto self = shared_from_this();
+
+    //Прежде временно удалялся, продлил жизнь через сильный указатель
+    asio::co_spawn(_socket.get_executor(), readLoop(self), asio::detached);
+    asio::co_spawn(_socket.get_executor(), WriteLoop(self), asio::detached);
 
     SCyptsKeysData CryptoMessage(ToolLib::toBase64(_CryptoLib->getPublicKeyDER()));
     sendMessage(CryptoMessage);
-
 }
 
 
 void Client::disconnect()
 {
+    if (_isDisconnected.exchange(true)) return;
+
     notifyDisconnect();
     cout << "[Client] Отключился.\n";
 
@@ -67,8 +67,12 @@ void Client::notifyDisconnect()
 }
 void Client::sendMessage(const SBaseMessageData& message)
 {
-    if (!_socket.is_open()) return;
-
+    if (!_socket.is_open())
+    {
+        CLIENT_WARNING("Can't add new message UUID: " + _UUID);
+        return;
+    }
+    CLIENT_INFO("Send new message");
     JsonObject doc = message.ToJSON();
     string jsonStr = doc.dump();
 
@@ -85,28 +89,38 @@ void Client::sendMessage(const SBaseMessageData& message)
     vector<uint8_t> packet;
     packet.reserve(4 + size);
 
-    // Записываем длину в формате Big-Endian (сетевой порядок)
     packet.push_back((size >> 24) & 0xFF);
     packet.push_back((size >> 16) & 0xFF);
     packet.push_back((size >> 8) & 0xFF);
     packet.push_back(size & 0xFF);
     packet.insert(packet.end(), payload.begin(), payload.end());
 
-    asio::post(_socket.get_executor(), [this, p = std::move(packet)]() mutable {
-        _writeQueue.push(std::move(p));
-        _writeTimer.cancel_one(); // Пробуждаем writeLoop, если он спал
+    asio::post(_socket.get_executor(), [this, p = std::move(packet)]() mutable 
+        {
+            std::lock_guard<std::mutex> lock(_writeQueueMutex);
+            _writeQueue.push(std::move(p));
+            _writeTimer.cancel_one();
         });
 }
 
-asio::awaitable<void> Client::WriteLoop()
+asio::awaitable<void> Client::WriteLoop(std::shared_ptr<Client> self)
 {
     try
     {
         for (;;)
         {
-            if (_writeQueue.empty())
+
+
             {
-                _writeTimer.expires_at(std::chrono::steady_clock::time_point::max());
+                std::lock_guard<std::mutex> lock(_writeQueueMutex);
+                if (_writeQueue.empty())
+                {
+                    _writeTimer.expires_at(std::chrono::steady_clock::time_point::max());
+                }
+            }
+
+            if (_writeTimer.expiry() == std::chrono::steady_clock::time_point::max())
+            {
                 std::error_code ec;
                 co_await _writeTimer.async_wait(asio::redirect_error(asio::use_awaitable, ec));
             }
@@ -114,18 +128,23 @@ asio::awaitable<void> Client::WriteLoop()
             if (!_socket.is_open()) co_return;
 
             std::vector<uint8_t> currentPacket;
+            bool hasPacket = false;
 
-            if (!_writeQueue.empty())
             {
-                currentPacket = std::move(_writeQueue.front());
-                _writeQueue.pop();
+                std::lock_guard<std::mutex> lock(_writeQueueMutex);
+                if (!_writeQueue.empty())
+                {
+                    currentPacket = std::move(_writeQueue.front());
+                    _writeQueue.pop();
+                    hasPacket = true;
+                }
             }
-            else
+
+            if (!hasPacket)
             {
                 continue;
             }
 
-            // Безопасно отправляем: currentPacket гарантированно живет до конца строки
             co_await asio::async_write(_socket, asio::buffer(currentPacket), asio::use_awaitable);
         }
     }
@@ -137,33 +156,43 @@ asio::awaitable<void> Client::WriteLoop()
 }
 
 
-asio::awaitable<void> Client::readLoop()
+asio::awaitable<void> Client::readLoop(std::shared_ptr<Client> self)
 {
     try
     {
-        // Входной буфер: храним «хвосты» между чтениями
-        std::vector<char> buffer;
+        // Буфер теперь хранит только сырые байты текущего потока
+        std::vector<uint8_t> buffer;
         buffer.reserve(4096);
 
         for (;;)
         {
-            if (buffer.size() < 4)
+            CLIENT_INFO("Run read: {}", _UUID);
+            while (buffer.size() < 4)
             {
-                buffer.resize(4096); // временный буфер для чтения
-                std::size_t n = co_await _socket.async_read_some(asio::buffer(buffer), asio::use_awaitable);
-                buffer.resize(n);    // реальная длина прочитанного
+                size_t currentSize = buffer.size();
+                size_t need = 4 - currentSize;
 
-                if (n == 0)
-                {
+                buffer.resize(currentSize + need);
+
+                std::size_t n = co_await asio::async_read(
+                    _socket,
+                    asio::buffer(buffer.data() + currentSize, need),
+                    asio::use_awaitable
+                );
+
+                if (n == 0) {
                     disconnect();
                     co_return;
                 }
-                // Дальше будем копировать в основной буфер
+
+                buffer.resize(currentSize + n);
             }
 
-            // Читаем длину пакета (4 байта)
-            uint32_t size = 0;
-            std::memcpy(&size, buffer.data(), 4);
+            // Шаг 2: Читаем размер пакета (Big-Endian)
+            uint32_t size = (static_cast<uint32_t>(buffer[0]) << 24) |
+                (static_cast<uint32_t>(buffer[1]) << 16) |
+                (static_cast<uint32_t>(buffer[2]) << 8) |
+                (static_cast<uint32_t>(buffer[3]));
 
             constexpr uint32_t MAX_PACKET_SIZE = 10 * 1024 * 1024;
             if (size > MAX_PACKET_SIZE)
@@ -173,54 +202,54 @@ asio::awaitable<void> Client::readLoop()
                 co_return;
             }
 
-            // Проверяем, хватает ли данных для полного пакета
+            CLIENT_INFO("Size: {}", size);
+
             const uint32_t totalSize = 4 + size;
             if (buffer.size() < totalSize)
             {
-                // Не хватает — читаем ещё, пока не доберёмся до полного пакета
-                while (buffer.size() < totalSize)
-                {
-                    buffer.resize(totalSize); // резервируем место
-                    std::size_t need = totalSize - buffer.size();
-                    // Читаем только недостающее
-                    auto readBuffer = asio::buffer(buffer.data() + buffer.size(), need);
-                    std::size_t n = co_await _socket.async_read_some(readBuffer, asio::use_awaitable);
+                size_t currentSize = buffer.size();
+                size_t need = totalSize - currentSize;
 
-                    if (n == 0)
-                    {
-                        std::cout << "Client " << getUUID() << ": соединение разорвано при чтении пакета\n";
-                        disconnect();
-                        co_return;
-                    }
-                    buffer.resize(buffer.size() + n);
+                buffer.resize(totalSize); 
+
+                std::size_t n = co_await asio::async_read(
+                    _socket,
+                    asio::buffer(buffer.data() + currentSize, need),
+                    asio::use_awaitable
+                );
+
+                if (n == 0)
+                {
+                    std::cout << "Client " << getUUID() << ": соединение разорвано при чтении пакета\n";
+                    disconnect();
+                    co_return;
                 }
+                buffer.resize(currentSize + n);
             }
 
-            const char* payloadPtr = buffer.data() + 4;
+            const uint8_t* payloadPtr = buffer.data() + 4;
             std::vector<uint8_t> payload(payloadPtr, payloadPtr + size);
 
-            // Шифрование/дешифрование
             if (_CryptoLib->hasSharedSecret())
             {
+                CLIENT_INFO("Decrypting packet for: " + _UUID);
                 auto decrypted = _CryptoLib->decryptMessage(payload);
+                std::string jsonStr(reinterpret_cast<const char*>(decrypted.data()), decrypted.size());
+                spdlog::info("Decrypted JSON string: '{}'", jsonStr);
                 if (decrypted.empty())
                 {
                     std::cout << "Client " << getUUID() << ": расшифровка не удалась, пропускаем пакет\n";
-                    // Удаляем обработанный пакет из начала буфера
                     buffer.erase(buffer.begin(), buffer.begin() + totalSize);
-                    continue; // следующий цикл
+                    continue;
                 }
                 payload = std::move(decrypted);
             }
 
-            // Парсим JSON
+            CLIENT_INFO("Run parse JSON: " + _UUID);
             JsonObject jsonPacket;
             try
             {
-                jsonPacket = JsonObject::parse(
-                    reinterpret_cast<const char*>(payload.data()),
-                    reinterpret_cast<const char*>(payload.data() + payload.size())
-                );
+                jsonPacket = JsonObject::parse(payload.begin(), payload.end());
             }
             catch (const nlohmann::json::exception& e)
             {
@@ -229,14 +258,18 @@ asio::awaitable<void> Client::readLoop()
                 continue;
             }
 
-            // Достаём тип сообщения
+
+            if (!jsonPacket.contains("TypeMessage") || jsonPacket["TypeMessage"].is_null()) 
+            {
+                CLIENT_ERROR("Ошибка, JSON не полный!");
+                buffer.erase(buffer.begin(), buffer.begin() + totalSize);
+                continue;
+            }
+
             ETypeOfMessage msgType = static_cast<ETypeOfMessage>(jsonPacket["TypeMessage"].get<int>());
 
-            // Обработка Crypto-сообщения (обмен ключами)
             if (msgType == ETypeOfMessage::Crypto)
             {
-                // Здесь логика как в Qt: парсим ключи, вычисляем общий секрет
-                // Если всё ок — можно даже не вызывать dispatch, а сразу вернуть
                 bool ok = handleCryptoHandshake(jsonPacket);
                 if (!ok)
                 {
@@ -245,12 +278,9 @@ asio::awaitable<void> Client::readLoop()
                     co_return;
                 }
 
-                // Удаляем обработанный пакет
                 buffer.erase(buffer.begin(), buffer.begin() + totalSize);
                 continue;
             }
-
-            // Диспетчеризация
 
             co_await _Core._ClientDispatcher->dispatch(msgType, jsonPacket, shared_from_this());
             buffer.erase(buffer.begin(), buffer.begin() + totalSize);

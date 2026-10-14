@@ -39,11 +39,12 @@ public:
     QByteArray hashPassword(const QString &password, const QByteArray &salt);
     bool verifyPassword(const QString &password, const QByteArray &salt, const QByteArray &storedHash);
 
+
+    QByteArray m_aesKey;                    // ключ AES-256 (32 байта)
 private:
     EVP_PKEY *m_keyPair = nullptr;          // своя пара ключей
     EVP_PKEY *m_peerKey = nullptr;          // чужой публичный ключ
     QByteArray m_sharedSecret;              // вычисленный общий секрет
-    QByteArray m_aesKey;                    // ключ AES-256 (32 байта)
     bool m_hasSecret = false;
 
     static QByteArray evpPkeyToDer(EVP_PKEY *key, bool publicKey);

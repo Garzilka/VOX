@@ -62,3 +62,45 @@ public:
     CmdRequestReg(const shared_ptr<Repository>& result_Repository) : IDBCommandHandler(result_Repository) {};
     virtual void execute(const BDTask& data) override;
 };
+
+class CmdRequestUserPassport : public IDBCommandHandler
+{
+public:
+    CmdRequestUserPassport(const shared_ptr<Repository>& result_Repository) : IDBCommandHandler(result_Repository) {};
+    virtual void execute(const BDTask& data) override;
+};
+
+class CmdRequestUserDetails : public IDBCommandHandler
+{
+public:
+    CmdRequestUserDetails(const shared_ptr<Repository>& result_Repository) : IDBCommandHandler(result_Repository) {};
+    virtual void execute(const BDTask& data) override;
+};
+
+class CmdLoadRelation : public IDBCommandHandler
+{
+public:
+    CmdLoadRelation(const shared_ptr<Repository>& result_Repository) : IDBCommandHandler(result_Repository) {};
+    virtual void execute(const BDTask& data) override;
+};
+
+class CmdFriendRequest : public IDBCommandHandler
+{
+public:
+    CmdFriendRequest(const shared_ptr<Repository>& result_Repository) : IDBCommandHandler(result_Repository) {};
+    virtual void execute(const BDTask& data) override;
+};
+
+class CmdFriendAccept : public IDBCommandHandler
+{
+public:
+    CmdFriendAccept(const shared_ptr<Repository>& result_Repository) : IDBCommandHandler(result_Repository) {};
+    virtual void execute(const BDTask& data) override;
+};
+
+class CmdSearchUsers : public IDBCommandHandler
+{
+public:
+    CmdSearchUsers(const shared_ptr<Repository>& result_Repository) : IDBCommandHandler(result_Repository) {};
+    virtual void execute(const BDTask& data) override;
+};

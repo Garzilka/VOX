@@ -56,10 +56,9 @@ public:
     Q_INVOKABLE void requestJoinVoice(const QString &serverGUID, const QString &channelGUID);
     Q_INVOKABLE void requestLeaveVoice(const QString &serverGUID, const QString &channelGUID);
 
-    // Новые ленивые запросы
-    Q_INVOKABLE void requestDirectChats();                              // Запрос DM-списка
-    Q_INVOKABLE void requestServerDetails(const QString& serverGUID);   // Клик на круглую иконку сервера
-    Q_INVOKABLE void requestOpenDataUsers(const QList<QString>& guids);    // Пакетный запрос просроченных профилей
+    Q_INVOKABLE void requestDirectChats();
+    Q_INVOKABLE void requestServerDetails(const QString& serverGUID);
+    Q_INVOKABLE void requestUserPassport(const QList<QString>& guids);
     Q_INVOKABLE void requestOpenOrCreateChat(int chatType, const QString& targetUserGUID, const QString& serverGUID, const QString& name);
     Q_INVOKABLE void requestCreateServer(const QString& serverName);
     Q_INVOKABLE void requestGenerateInvite(const QString& serverGUID, const QString& targetUserGUID);
@@ -93,16 +92,15 @@ private:
     void ResponseCrypto(QJsonObject& JSONObject);
     void ResponseAuth(QJsonObject& JSONObject);
     void ResponseSearchUsers(QJsonObject& JSONObject);
-    void ResponseFriendsList(QJsonObject& JSONObject);
-    void ResponseFriendships(QJsonObject& JSONObject);
+    void ResponseRelations(QJsonObject& JSONObject);
     void ResponseHistoryChannel(QJsonObject& JSONObject);
     void ResponseVoiceUserLeft(QJsonObject &JSONObject);
     void ResponseVoiceUserJoined(QJsonObject &JSONObject);
 
-    // Новые ленивые ответы
+
     void ResponseDirectChats(QJsonObject& JSONObject);
     void ResponseServerDetails(QJsonObject& JSONObject);
-    void ResponseOpenUsersData(QJsonObject& JSONObject);
+    void ResponseUserPassport(QJsonObject& JSONObject);
     void ResponseOpenOrCreateChat(QJsonObject& JSONObject);
     void ResponseCreateServer(QJsonObject& JSONObject);
     void ResponseGenerateInvite(QJsonObject& JSONObject);

@@ -9,15 +9,7 @@ class BD_Dispatcher
     unordered_map<EBDTaskType, shared_ptr<IDBCommandHandler>> m_Commands;
 
 public:
-    explicit BD_Dispatcher(const shared_ptr<Repository>& result_Repository)
-    {
-        registerHandler(EBDTaskType::CreateServer, std::make_shared<CmdCreateServer>(result_Repository));
-        registerHandler(EBDTaskType::LoadPassport, std::make_shared<CmdRequestServerPassport>(result_Repository));
-        registerHandler(EBDTaskType::LoadDetails, std::make_shared<CmdRequestServerDetails>(result_Repository));
-        registerHandler(EBDTaskType::LoadPassport, std::make_shared<CmdRequestAppVersion>(result_Repository));
-        registerHandler(EBDTaskType::Login, std::make_shared<CmdRequestLogin>(result_Repository));
-        registerHandler(EBDTaskType::Registration, std::make_shared<CmdRequestReg>(result_Repository));
-    }
+    explicit BD_Dispatcher(const shared_ptr<Repository>& result_Repository);
     void dispatch(const BDTask& data)
     {
         auto it = m_Commands.find(data.type);
@@ -27,7 +19,7 @@ public:
         }
         else
         {
-            cerr << "[Dispatcher] Неизвестный тип сообщения: " << static_cast<int>(data.type) << "\n";
+            REPOSITORY_WARNING("[Dispatcher] Неизвестный тип сообщения: {}", static_cast<int>(data.type));
         }
         return;
     }

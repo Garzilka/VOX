@@ -7,7 +7,7 @@
 
 void QConnection::requestHistoryMessage(const QString &UUID)
 {
-    SChannelHistoryData msg(UUID);
+    SChannelDetails msg(UUID);
     sendMessage(msg);
 }
 
@@ -24,7 +24,7 @@ void QConnection::ResponseOpenOrCreateChat(QJsonObject &JSONObject)
 
 void QConnection::ResponseHistoryChannel(QJsonObject &JSONObject)
 {
-    SChannelHistoryData historyData(JSONObject);
+    SChannelDetails historyData(JSONObject);
     QVariantList formattedMessages;
 
     for (const SMessageData& msg : historyData.Messages)

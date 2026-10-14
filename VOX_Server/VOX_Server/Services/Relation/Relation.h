@@ -15,13 +15,16 @@ private:
     bool _isValid = false;
 
     bool LoadDetails();
-    void fillPendingList(vector<string>& result, unordered_set<string>& source);
 public:
     explicit Relation() = default;
-    bool getUserRelations(SUserRelations& outRelations, const string& clientUUID);
 
     bool setUserRelations(SUserRelations newUserRelations, vector<string>& result_Pendings);
+    bool getUserRelations(SUserRelations& outRelations, const string& clientUUID);
+    void addNewFriend(const string& targetClientUUID);
+    void addRequestFriend(const string& targetClientUUID);
     void addPendingClients(const string& clientUUID);
+    virtual void removeFriend(const string& targetClientUUID);
+    virtual void removeRequestFriend(const string& targetClientUUID);
 
     void warmup(std::function<void(string userUUID)>& Callback);
 

@@ -142,7 +142,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Data\AsioThreads.h" />
+    <ClCompile Include="Dispatch\BD_Dispatcher.cpp" />
     <ClCompile Include="Dispatch\Client_Dispatcher.cpp" />
+    <ClCompile Include="Libs\Tools\ToolLib.cpp" />
     <ClCompile Include="Services\Channel\Channel.cpp" />
     <ClCompile Include="Client.cpp" />
     <ClCompile Include="Dispatch\Client_Commands\Commands.cpp" />
@@ -150,28 +152,41 @@
     <ClCompile Include="Dispatch\BD_Commands\BD_Commands.cpp" />
     <ClCompile Include="DataBase\Repository.cpp" />
     <ClCompile Include="Libs\Crypto\CryptoLib.cpp" />
+    <ClCompile Include="Services\Channel\Impl\ChannelCacheServiceImpl.cpp" />
+    <ClCompile Include="Services\Channel\Impl\ChannelHandlerServiceImpl.cpp" />
     <ClCompile Include="Services\Common\Impl\AppVersionService.cpp" />
     <ClCompile Include="Services\Common\Impl\AuthClientService.cpp" />
     <ClCompile Include="Services\Common\Impl\CacheClientService.cpp" />
     <ClCompile Include="Services\Common\Impl\ConnectionClientServiceImpl.cpp" />
     <ClCompile Include="Services\Common\Impl\NotificationServiceImpl.cpp" />
     <ClCompile Include="Services\Presence\SearchUserService.cpp" />
+    <ClCompile Include="Services\Relation\Impl\FriendService.cpp" />
+    <ClCompile Include="Services\Relation\Impl\RelationCacheService.cpp" />
     <ClCompile Include="Services\Relation\Relation.cpp" />
+    <ClCompile Include="Services\Server\Impl\CacheServerService.cpp" />
+    <ClCompile Include="Services\Server\Impl\MakeServerService.cpp" />
     <ClCompile Include="Services\Server\Server.cpp" />
     <ClCompile Include="Services\Users\Impl\CacheUserServiceImpl.cpp" />
+    <ClCompile Include="Services\Users\Impl\SearchUserService.cpp" />
     <ClCompile Include="Services\Users\User.cpp" />
     <ClCompile Include="Services\Users\User.h" />
     <ClCompile Include="VOX_Server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Data\MessagePacket\DifferentsData.h" />
+    <ClInclude Include="Data\MessagePacket\UsersData.h" />
     <ClInclude Include="Libs\Tools\ToolLib.h" />
+    <ClInclude Include="Services\Channel\ChannelInterfaces.h" />
+    <ClInclude Include="Services\Channel\Impl\ChannelCacheServiceImpl.h" />
+    <ClInclude Include="Services\Channel\Impl\ChannelHandlerServiceImpl.h" />
     <ClInclude Include="Services\Common\Impl\CacheClientService.h" />
     <ClInclude Include="Services\Channel\Channel.h" />
     <ClInclude Include="Services\Presence\LoginBroadcastService.h" />
     <ClInclude Include="Services\Relation\Impl\FriendService.h" />
-    <ClInclude Include="Services\Relation\Impl\IFriendCacheService.h" />
+    <ClInclude Include="Services\Relation\Impl\RelationCacheService.h" />
     <ClInclude Include="Services\Relation\Relation.h" />
     <ClInclude Include="Services\Users\Impl\CacheUserServiceImpl.h" />
+    <ClInclude Include="Services\Users\Impl\SearchUserService.h" />
     <ClInclude Include="zzzz\ChannelManager.h" />
     <ClInclude Include="Services\Common\Impl\AppVersionService.h" />
     <ClInclude Include="Services\Common\Impl\AuthClientService.h" />
@@ -185,7 +200,6 @@
     <ClInclude Include="Services\Relation\RelationshipInterfaces.h" />
     <ClInclude Include="Libs\DI\DIServiceContainer.h" />
     <ClInclude Include="Services\Server\Impl\CacheServerService.h" />
-    <ClInclude Include="Services\Server\Impl\DBServerService.h" />
     <ClInclude Include="Services\Server\Impl\MakeServerService.h" />
     <ClInclude Include="Services\Server\ServerInterfaces.h" />
     <ClInclude Include="Services\Session\SessionInterfaces.h" />

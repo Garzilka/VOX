@@ -2,84 +2,13 @@
 #include "CoreData.h"
 
 
-struct SGenerateInviteData : public SBaseMessageData
-{
-    string ServerUUID;
-    string TargetUserUUID; // СКОРРЕКТИРОВАНО: ID получателя вместо ID комнаты
-    string Token;
-
-    SGenerateInviteData(string _ServerUUID, string _TargetUserUUID, ETypeOfMessage _TypeMessage = ETypeOfMessage::ServerInvite)
-        : SBaseMessageData(_TypeMessage), ServerUUID(_ServerUUID), TargetUserUUID(_TargetUserUUID) {};
-
-    SGenerateInviteData(const JsonObject& InJSON) : SBaseMessageData(InJSON)
-    {
-        ServerUUID      =ToolLib::jsonGetValue<string>(InJSON, "ServerUUID");
-        TargetUserUUID  =ToolLib::jsonGetValue<string>(InJSON, "TargetUserUUID");
-        Token           =ToolLib::jsonGetValue<string>(InJSON, "Token");
-    };
-
-    virtual JsonObject ToJSON() const override
-    {
-        JsonObject messageObj = SBaseMessageData::ToJSON();
-        messageObj["ServerUUID"]        = ServerUUID;
-        messageObj["TargetUserUUID"]    = TargetUserUUID;
-        messageObj["Token"]             = Token;
-        return messageObj;
-    }
-};
-
-struct SAcceptInviteData : public SBaseMessageData
-{
-    string Token;
-    string ServerUUID;
-    SAcceptInviteData(string _Token, ETypeOfMessage _TypeMessage = ETypeOfMessage::ServerAccept)
-        : SBaseMessageData(_TypeMessage), Token(_Token) {};
-    SAcceptInviteData(const JsonObject& InJSON) : SBaseMessageData(InJSON)
-    {
-        Token =ToolLib::jsonGetValue<string>(InJSON, "Token");
-        ServerUUID =ToolLib::jsonGetValue<string>(InJSON, "ServerUUID");
-    };
-    virtual JsonObject ToJSON() const override
-    {
-        JsonObject messageObj = SBaseMessageData::ToJSON();
-        messageObj["Token"] = Token;
-        messageObj["ServerUUID"] = ServerUUID;
-        return messageObj;
-    }
-};
-
-struct SCreateServerData : public SBaseMessageData
-{
-    string ServerName;
-    string OwnerUUID;
-    string ServerUUID;
-    SCreateServerData(string _ServerName, string _OwnerUUID, ETypeOfMessage _TypeMessage = ETypeOfMessage::ServerCreate)
-        : SBaseMessageData(_TypeMessage), ServerName(_ServerName), OwnerUUID(_OwnerUUID) {};
-
-    SCreateServerData(const JsonObject& InJSON) : SBaseMessageData(InJSON)
-    {
-        ServerName      =ToolLib::jsonGetValue<string>(InJSON, "ServerName");
-        OwnerUUID       =ToolLib::jsonGetValue<string>(InJSON, "OwnerUUID");
-        ServerUUID      =ToolLib::jsonGetValue<string>(InJSON, "ServerUUID");
-    };
-
-    virtual JsonObject ToJSON() const override
-    {
-        JsonObject messageObj = SBaseMessageData::ToJSON();
-        messageObj["ServerName"] = ServerName;
-        messageObj["OwnerUUID"] = OwnerUUID;
-        messageObj["ServerUUID"] = ServerUUID;
-        return messageObj;
-    }
-};
-
-struct SServerPassport
+struct SServerPassport : public SBaseMessageData
 {
     string ServerUUID{""};
     string Name{""};
     string IconUrl{""};
 
-    SServerPassport() = default;
+    SServerPassport() : SBaseMessageData(ETypeOfMessage::ServerPassport) {};
 
     JsonObject ToJSON() const 
     {
@@ -107,32 +36,6 @@ inline void to_json(JsonObject& j, const SServerPassport& d) {
 inline void from_json(const JsonObject& j, SServerPassport& d) {
     d = SServerPassport::FromJSON(j);
 }
-
-struct SServerPassportFor : public SBaseMessageData
-{
-    string serverUUID;
-    SServerPassport Server;
-
-    SServerPassportFor(ETypeOfMessage _TypeMessage = ETypeOfMessage::ServerPassport)
-        : SBaseMessageData(_TypeMessage) {};
-
-    // Умный конструктор парсинга JSON, читающий оба массива
-    SServerPassportFor(const JsonObject& InJSON) : SBaseMessageData(InJSON)
-    {
-        serverUUID = InJSON["serverUUID"];
-        Server = SServerPassport::FromJSON(InJSON["Server"]);
-    };
-
-    // Сериализация структуры в JSON
-    virtual JsonObject ToJSON() const override 
-    {
-        JsonObject messageObj = SBaseMessageData::ToJSON();
-        messageObj["serverUUID"] = serverUUID;
-        messageObj["Server"] = Server;
-
-        return messageObj;
-    }
-};
 
 struct SServerRoleData
 {
@@ -210,6 +113,81 @@ struct SServerDetailsData : public SBaseMessageData
         messageObj["Channels"] = Channels;
         messageObj["RoleData"] = RoleData;
         messageObj["MembersData"] = MembersData;
+        return messageObj;
+    }
+};
+
+
+struct SGenerateInviteData : public SBaseMessageData
+{
+    string ServerUUID;
+    string TargetUserUUID;
+    string Token;
+
+    SGenerateInviteData(string _ServerUUID, string _TargetUserUUID, ETypeOfMessage _TypeMessage = ETypeOfMessage::ServerInvite)
+        : SBaseMessageData(_TypeMessage), ServerUUID(_ServerUUID), TargetUserUUID(_TargetUserUUID) {
+    };
+
+    SGenerateInviteData(const JsonObject& InJSON) : SBaseMessageData(InJSON)
+    {
+        ServerUUID = ToolLib::jsonGetValue<string>(InJSON, "ServerUUID");
+        TargetUserUUID = ToolLib::jsonGetValue<string>(InJSON, "TargetUserUUID");
+        Token = ToolLib::jsonGetValue<string>(InJSON, "Token");
+    };
+
+    virtual JsonObject ToJSON() const override
+    {
+        JsonObject messageObj = SBaseMessageData::ToJSON();
+        messageObj["ServerUUID"] = ServerUUID;
+        messageObj["TargetUserUUID"] = TargetUserUUID;
+        messageObj["Token"] = Token;
+        return messageObj;
+    }
+};
+
+struct SAcceptInviteData : public SBaseMessageData
+{
+    string Token;
+    string ServerUUID;
+    SAcceptInviteData(string _Token, ETypeOfMessage _TypeMessage = ETypeOfMessage::ServerAccept)
+        : SBaseMessageData(_TypeMessage), Token(_Token) {
+    };
+    SAcceptInviteData(const JsonObject& InJSON) : SBaseMessageData(InJSON)
+    {
+        Token = ToolLib::jsonGetValue<string>(InJSON, "Token");
+        ServerUUID = ToolLib::jsonGetValue<string>(InJSON, "ServerUUID");
+    };
+    virtual JsonObject ToJSON() const override
+    {
+        JsonObject messageObj = SBaseMessageData::ToJSON();
+        messageObj["Token"] = Token;
+        messageObj["ServerUUID"] = ServerUUID;
+        return messageObj;
+    }
+};
+
+struct SCreateServerData : public SBaseMessageData
+{
+    string ServerName;
+    string OwnerUUID;
+    string ServerUUID;
+    SCreateServerData(string _ServerName, string _OwnerUUID, ETypeOfMessage _TypeMessage = ETypeOfMessage::ServerCreate)
+        : SBaseMessageData(_TypeMessage), ServerName(_ServerName), OwnerUUID(_OwnerUUID) {
+    };
+
+    SCreateServerData(const JsonObject& InJSON) : SBaseMessageData(InJSON)
+    {
+        ServerName = ToolLib::jsonGetValue<string>(InJSON, "ServerName");
+        OwnerUUID = ToolLib::jsonGetValue<string>(InJSON, "OwnerUUID");
+        ServerUUID = ToolLib::jsonGetValue<string>(InJSON, "ServerUUID");
+    };
+
+    virtual JsonObject ToJSON() const override
+    {
+        JsonObject messageObj = SBaseMessageData::ToJSON();
+        messageObj["ServerName"] = ServerName;
+        messageObj["OwnerUUID"] = OwnerUUID;
+        messageObj["ServerUUID"] = ServerUUID;
         return messageObj;
     }
 };

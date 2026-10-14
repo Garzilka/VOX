@@ -29,16 +29,12 @@ private:
     int ServerState = 0; // 0 - Голосовой/Текстовый чат | 1 - КанБан | 2 - Документы
     QString m_activeServerGUID;
 
-    // СИНГЛ СОРС ОФ ТРАСТ: Разделенная архитектура кэша
-    QHash<QString, SServerPassport> m_serverRegistry; // 1. Глобальный паспортный реестр всех серверов
-    QStringList m_myServers;                          // 2. Плоский список UUID серверов, где мы состоим
+    //QHash<QString, SServerPassport> m_serverRegistry;
+    QStringList m_myServers;
 
-    // Ленивый батч-буфер для запроса неизвестных паспортов
     QSet<QString> m_pendingPassportRequests;
     QTimer* m_batchTimer = nullptr;
 
-    // Внутренние структуры для детального кэша активного сервера (Каналы и участники)
-    // Они загружаются только при КЛИКЕ на круглую иконку сервера
     struct SServerFullDetails
     {
         QString ServerGUID;

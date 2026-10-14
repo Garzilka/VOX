@@ -102,6 +102,18 @@ bool CryptoLib::computeSharedSecret(const ByteArray& peerPublicKeyDER)
     }
 
     EVP_PKEY_CTX_free(ctx);
+    if (m_hasSecret) 
+    {
+        std::stringstream ss;
+        ss << std::hex << std::setfill('0');
+        for (uint8_t byte : m_aesKey) {
+            ss << std::setw(2) << static_cast<int>(byte);
+        }
+        std::string hexKey = ss.str();
+
+        // Выводим в spdlog, используя макрос сервера
+        spdlog::info("[CRYPTO] Server AES Key (Hex): {}", hexKey);
+    }
     return ok;
 }
 
@@ -178,39 +190,33 @@ ByteArray CryptoLib::encryptMessage(const ByteArray& plaintext) const
 ByteArray CryptoLib::decryptMessage(const ByteArray& encrypted) const
 {
     if (!m_hasSecret || m_aesKey.size() != 32 || encrypted.size() < 12 + 16) {
-        return {}; // минимум: nonce (12) + tag (16); шифротекст может быть пустым
+        return {};
     }
 
     const size_t nonceLen = 12;
     const size_t tagLen = 16;
-
-    // Разбираем пакет: [nonce][ciphertext][tag]
-    const unsigned char* noncePtr = encrypted.data();
-    const unsigned char* cipherPtr = noncePtr + nonceLen;
     const size_t cipherSize = encrypted.size() - nonceLen - tagLen;
-    const unsigned char* tagPtr = cipherPtr + cipherSize;
+
+    // Выделяем указатели строго по структуре: [nonce 12 B][ciphertext][tag 16 B]
+    const unsigned char* noncePtr = encrypted.data();
+    const unsigned char* cipherPtr = encrypted.data() + nonceLen;
+    const unsigned char* tagPtr = encrypted.data() + nonceLen + cipherSize;
 
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     if (!ctx) return {};
 
     const unsigned char* keyPtr = m_aesKey.data();
 
-    // 1. Инициализация расшифровки с тем же ключом и nonce
     if (EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, keyPtr, noncePtr) != 1) {
         EVP_CIPHER_CTX_free(ctx);
         return {};
     }
 
-    // 2. Устанавливаем тег ДО расшифровки.
-    //    EVP_CTRL_GCM_SET_TAG требует неконстантный указатель, поэтому const_cast.
-    //    Сами байты мы не меняем — OpenSSL только читает их.
-    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, tagLen,
-        const_cast<unsigned char*>(tagPtr)) != 1) {
+    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, tagLen, const_cast<unsigned char*>(tagPtr)) != 1) {
         EVP_CIPHER_CTX_free(ctx);
         return {};
     }
 
-    // 3. Расшифровка основного блока
     ByteArray plaintext(cipherSize);
     int outLen = 0;
 
@@ -218,16 +224,17 @@ ByteArray CryptoLib::decryptMessage(const ByteArray& encrypted) const
         plaintext.data(),
         &outLen,
         cipherPtr,
-        static_cast<int>(cipherSize)) != 1) {
+        static_cast<int>(cipherSize)) != 1) 
+    {
         EVP_CIPHER_CTX_free(ctx);
         return {};
     }
 
-    // 4. Финализация: если тег не совпал — вернёт ошибку (это и есть проверка подлинности)
     int finalLen = 0;
-    if (EVP_DecryptFinal_ex(ctx, plaintext.data() + outLen, &finalLen) != 1) {
+    if (EVP_DecryptFinal_ex(ctx, plaintext.data() + outLen, &finalLen) != 1) 
+    {
         EVP_CIPHER_CTX_free(ctx);
-        return {}; // битые данные или неверный ключ — пустой результат
+        return {};
     }
 
     EVP_CIPHER_CTX_free(ctx);

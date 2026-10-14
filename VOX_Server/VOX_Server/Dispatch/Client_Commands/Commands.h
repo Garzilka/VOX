@@ -6,6 +6,10 @@
 class Client;
 class IAuthClientService;
 class IAppVersionService;
+class IRelationCacheService;
+class ISearchUserService;
+class IFriendService;
+class IUserProfileCacheService;
 
 class IClientCommandHandler
 {
@@ -18,8 +22,6 @@ public:
 
 class LoginHandler : public IClientCommandHandler {
 
-    //Живет от начала жизни сервера и до конца, поэтому не важно 
-    //weak или shared, беру shared для экономии на lock
     shared_ptr<IAuthClientService> _AuthClientService;
 
 public:
@@ -27,18 +29,24 @@ public:
     virtual asio::awaitable<void> execute(shared_ptr<Client> sender, const JsonObject& data) override;
 };
 
-class RequestFriendHandler : public IClientCommandHandler {
+class FriendRequestHandler : public IClientCommandHandler {
+    shared_ptr<IFriendService> _FriendService;
 public:
+    FriendRequestHandler(weak_ptr<IFriendService> in_FriendService) : _FriendService(in_FriendService) {};
     virtual asio::awaitable<void> execute(shared_ptr<Client> sender, const JsonObject& data) override;
 };
 
-class ResponseFriendHandler : public IClientCommandHandler {
+class FriendAcceptHandler : public IClientCommandHandler {
+    shared_ptr<IFriendService> _FriendService;
 public:
+    FriendAcceptHandler(weak_ptr<IFriendService> in_FriendService) : _FriendService(in_FriendService) {};
     virtual asio::awaitable<void> execute(shared_ptr<Client> sender, const JsonObject& data) override;
 };
 
-class RequestFriendsListHandler : public IClientCommandHandler {
+class RequestRelationsHandler : public IClientCommandHandler {
+    shared_ptr<IRelationCacheService> _RelationCacheService;
 public:
+    RequestRelationsHandler(weak_ptr<IRelationCacheService> in_RelationCacheService) : _RelationCacheService(in_RelationCacheService) {};
     virtual asio::awaitable<void> execute(shared_ptr<Client> sender, const JsonObject& data) override;
 };
 
@@ -52,12 +60,16 @@ public:
 };
 
 class RequestSearchUsersHandler : public IClientCommandHandler {
+    shared_ptr<ISearchUserService> _SearchUserService;
 public:
+    RequestSearchUsersHandler(shared_ptr<ISearchUserService> in_SearchUserService) : _SearchUserService(in_SearchUserService) {};
     virtual asio::awaitable<void> execute(shared_ptr<Client> sender, const JsonObject& data) override;
 };
 
-class RequestOpenUsersDataHandler : public IClientCommandHandler {
+class RequestUsersPassportHandler : public IClientCommandHandler {
+    shared_ptr<IUserProfileCacheService> _UserProfileCacheService;
 public:
+    RequestUsersPassportHandler(shared_ptr<IUserProfileCacheService> in_SearchUserService) : _UserProfileCacheService(in_SearchUserService) {};
     virtual asio::awaitable<void> execute(shared_ptr<Client> sender, const JsonObject& data) override;
 };
 

@@ -9,5 +9,5 @@ class NotificationServiceImpl : public INotificationService
 
 public:
     NotificationServiceImpl(shared_ptr<ICacheClientService> in_CacheService) : cacheService(in_CacheService) {}
-    virtual void NotifyClients(const vector<string> clietnsUUID, const SBaseMessageData Message) override;
+    virtual void NotifyClients(const vector<string> clietnsUUID, const SBaseMessageData& Message) override;
 };

@@ -13,7 +13,6 @@
 #include <QAudioSink>
 #include "miccapture.h"
 
-// ПОДКЛЮЧАЕМ ОФИЦИАЛЬНЫЕ ХЕДЕРЫ LIVEKIT SDK
 #include "livekit/livekit.h"
 #include "livekit/room.h"
 #include "livekit/track.h"
@@ -23,6 +22,7 @@
 #include "livekit/remote_audio_track.h"
 #include "voiceroomdelegate.h"
 
+using std::shared_ptr;
 
 class QVoiceEngine : public QObject
 {
@@ -32,20 +32,18 @@ class QVoiceEngine : public QObject
 
 private:
     QString m_currentRoomGUID;
-    QString m_liveKitServerUrl = "";//Будет вынесено отдельно
+    QString m_liveKitServerUrl = "ws://212.109.198.185:7880";
     bool m_isMicrophoneMuted = false;
 
-    // ЖИВЫЕ ОБЪЕКТЫ LIVEKIT SDK
-    std::shared_ptr<livekit::Room> m_room;
-    std::shared_ptr<livekit::LocalAudioTrack> m_localAudioTrack;
-    std::shared_ptr<livekit::AudioSource> m_audioSource;
+    shared_ptr<livekit::Room> m_room;
+    shared_ptr<livekit::LocalAudioTrack> m_localAudioTrack;
+    shared_ptr<livekit::AudioSource> m_audioSource;
     QMicCapture* m_MicCapture = nullptr;
 
     VoiceRoomDelegate m_roomDelegate;
 
     explicit QVoiceEngine(QObject *parent = nullptr) : QObject(parent)
     {
-        // Инициализируем WebRTC фабрики кодеков
         livekit::initialize();
         livekit::initialize(livekit::LogLevel::Debug);
         m_room = std::make_shared<livekit::Room>();
@@ -97,7 +95,7 @@ public:
             return;
 
         livekit::AudioStream::Options opts;
-        opts.capacity = 100; // кольцевой буфер ~1 сек кадров, старые дропаются
+        opts.capacity = 100;
 
         std::shared_ptr<livekit::AudioStream> stream =
             livekit::AudioStream::fromTrack(track, opts);
@@ -130,7 +128,8 @@ public:
 
     void connectToVoiceServer(const QString& roomGUID, const QString& jwtToken)
     {
-        if (!m_currentRoomGUID.isEmpty()) {
+        if (!m_currentRoomGUID.isEmpty())
+        {
             qInfo() << "VOICE ENGINE | Обнаружено активное подключение. Сброс старой сессии перед переподключением...";
             disconnectFromVoiceServer();
         }
@@ -175,14 +174,14 @@ public:
             {
                 localParticipant->publishTrack(m_localAudioTrack, pub);
 
-                QMetaObject::invokeMethod(this, [this]() {
-                    // Страховка от утечки памяти старого захватчика
+                QMetaObject::invokeMethod(this, [this]()
+                {
                     if (m_MicCapture) {
                         m_MicCapture->stop();
                         m_MicCapture->deleteLater();
                     }
                     m_MicCapture = new QMicCapture(m_audioSource);
-                    m_MicCapture->setMuted(m_isMicrophoneMuted); // Учитываем ваш первый вариант мута
+                    m_MicCapture->setMuted(m_isMicrophoneMuted);
                     m_MicCapture->start();
                 }, Qt::QueuedConnection);
 
@@ -217,7 +216,7 @@ public:
         if (m_MicCapture)
         {
             m_MicCapture->stop();
-            m_MicCapture->deleteLater(); // безопаснее, чем delete вручную
+            m_MicCapture->deleteLater();
             m_MicCapture = nullptr;
         }
         m_currentRoomGUID = "";

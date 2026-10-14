@@ -11,6 +11,7 @@
 #include <thread>
 #include <atomic>
 
+// ПОДКЛЮЧАЕМ ОФИЦИАЛЬНЫЕ ХЕДЕРЫ LIVEKIT SDK
 #include "livekit/room.h"
 #include "livekit/track.h"
 #include "livekit/room_event_types.h"
@@ -61,8 +62,10 @@ public slots:
     }
 
 private slots:
+    // Этот слот будет вызываться БЕЗОПАСНО в потоке, где живет QAudioSink (через invokeMethod)
     void playFrameData(const QByteArray& pcmData, int sampleRate, int channels)
     {
+        // Инициализируем аудиовыход лениво под РЕАЛЬНЫЙ формат пришедшего звука
         if (!m_sink)
         {
             QAudioFormat fmt;
@@ -93,6 +96,7 @@ private:
     {
         while (m_running)
         {
+            // Делаем локальную копию, чтобы избежать race condition при сбросе из GUI потока
             auto currentStream = m_stream;
             if (!currentStream)
             {
@@ -102,8 +106,10 @@ private:
 
             livekit::AudioFrameEvent frameEvent;
 
+            // БЛОКИРУЮЩЕЕ ЧТЕНИЕ
             bool hasFrame = currentStream->read(frameEvent);
 
+            // Если во время ожидания пришел стоп или стрим закрыли — выходим
             if (!hasFrame || !m_running || !m_stream)
             {
                 continue;

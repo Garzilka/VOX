@@ -5,26 +5,46 @@
 #include "../../Common/CommonInterfaces.h"
 
 
-void CacheUserServiceImpl::getUserPassport(const string& responseClientUUID, const string& targetClientUUID, SUserPassport& newPassport)
+bool CacheUserServiceImpl::getUserPassport(const string& responseClientUUID, SUserPassport& newPassport)
 {
-    if (responseClientUUID.empty()) return;
-    if (targetClientUUID.empty()) return;
+    if (newPassport.UUID.empty())
+    {
+        USER_WARNING("Requested UUID as null");
+        return false;
+    }
 
-    auto User = findOrAddUser(targetClientUUID);
-    if (!User) return;
+    if (responseClientUUID.empty())
+    {
+        USER_WARNING("Requester as null");
+        return false;
+    }
+
+    auto User = findOrAddUser(newPassport.UUID);
+    if (!User)
+    {
+        USER_ERROR("No maked user");
+        return false;
+    }
 
     SUserPassport ServerPas;
-    if (!User->getUserPassport(ServerPas, responseClientUUID)) return;
+    if (!User->getUserPassport(ServerPas, responseClientUUID))
+    {
+        USER_INFO("No cached passport for: {}, add pendings list", responseClientUUID);
+        return false;
+    }
+
+    return true;
 }
 
 void CacheUserServiceImpl::requestPassportInDB(const string& userUUID)
 {
     if (userUUID.empty()) return;
 
+    USER_INFO("Request in DB for: {}", userUUID);
     SUserPassport Pas;
     Pas.UUID = userUUID;
 
-    BDTask newTask(EBDTaskType::Login);
+    BDTask newTask(EBDTaskType::LoadUserPassport);
     newTask.payload = Pas.ToJSON();
     std::weak_ptr<CacheUserServiceImpl> weakSelf = shared_from_this();
 
@@ -49,26 +69,37 @@ void CacheUserServiceImpl::responsePassportFromDB(const JsonObject& obj)
     SUserPassport ServerPas(obj);
     shared_ptr<User> wakeupUser = nullptr;
 
+
+    if (!ServerPas.UUID.empty())
     {
-        std::lock_guard<mutex> lock(_Mutex);
-        auto it = m_wakeupUser.find(ServerPas.UUID);
-        if (it != m_wakeupUser.end())
-        {
-            wakeupUser = it->second;
-        }
+        USER_INFO("Response from DB for: {}", ServerPas.UUID);
+    }
+    else
+    {
+        USER_WARNING("Bad response from DB for: {}", ServerPas.UUID);
+        return;
     }
 
-    if (!wakeupUser) return;
-
-    vector<string> usersUUID;
-    if (wakeupUser->setUserPassport(ServerPas, usersUUID))
     {
-        loadComplete(ServerPas.UUID);
-        if (!usersUUID.empty() && notificationService)
+        std::lock_guard<mutex> lock(_Mutex);
+
+        shared_ptr<User> wakeupUser = takeUser(m_wakeupUser, ServerPas.UUID);
+
+        if (!wakeupUser)
         {
-            SRequestUserPassport msg;
-            msg.userPassport = std::move(ServerPas);
-            notificationService->NotifyClients(usersUUID, msg);
+            USER_WARNING("No wakeup User: {}", ServerPas.UUID);
+            return;
+        }
+
+
+        vector<string> usersUUID;
+        if (wakeupUser->setUserPassport(ServerPas, usersUUID))  //Remove wakeupUser if false
+        {
+            m_readyUser.try_emplace(ServerPas.UUID, std::move(wakeupUser));
+            if (!usersUUID.empty() && notificationService)
+            {
+                notificationService->NotifyClients(usersUUID, ServerPas);
+            }
         }
     }
 }

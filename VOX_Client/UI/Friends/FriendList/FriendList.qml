@@ -10,6 +10,12 @@ Rectangle
     property string selectedFriendName: ""
     property string selectedFriendGUID: ""
 
+    property int cacheUpdateCounter: 0
+    Connections {
+        target: UsersManager
+        onDataChanged: friendsListViewRoot.cacheUpdateCounter++
+    }
+
     Menu
     {
         id: globalContextMenu
@@ -70,7 +76,7 @@ Rectangle
         spacing: 0
 
         // ==========================================
-        // ХЕДЕР СПИСКА ДРУЗЕЙ (Синхронизирован с C++)
+        // ХЕДЕР СПИСКА ДРУЗЕЙ
         // ==========================================
         Rectangle
         {
@@ -110,12 +116,11 @@ Rectangle
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             FriendsManager.setState(0);
-                            ClientConnection.requestDirectChats(); // Запрос актуализации списков
+                            ClientConnection.requestDirectChats();
                         }
                     }
                 }
 
-                // Вкладка "Ожидание" (Переключает на State === 3)
                 Text
                 {
                     text: "Ожидание";
@@ -132,7 +137,6 @@ Rectangle
                     }
                 }
 
-                // Кнопка "Добавить в друзья" (Переключает на State === 2)
                 Button
                 {
                     id: addFriendBtn
@@ -191,10 +195,14 @@ Rectangle
                 delegate: FriendListItem
                 {
                     width: friendsMainView.width
-                    _avatarColor: modelData["avatarUrl"] ? modelData["avatarUrl"] : "#5865f2"
-                    _statusColor: modelData["presenceStatus"] === 1 ? "#23a55a" : "#80848e"
-                    _name: modelData["displayName"] ? modelData["displayName"] : ""
-                    _status: modelData["presenceStatus"] === 1 ? "В сети" : "Не в сети"
+
+                    property string userUUID: modelData
+                    property int dummy: friendsListViewRoot.cacheUpdateCounter
+
+                    _avatarColor: "#5865f2"
+                    _statusColor: UsersManager.getStatusColor(userUUID)
+                    _name: UsersManager.getDisplayName(userUUID)
+                    _status: _statusColor === "#23a55a" ? "В сети" : "Не в сети"
                     _currentActivity: ""
 
                     onRightClicked: (friendName, friendGUID, sourceItem, mx, my) => {

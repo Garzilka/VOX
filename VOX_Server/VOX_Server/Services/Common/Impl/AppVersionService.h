@@ -30,13 +30,13 @@ public:
         refreshVersionBackground();
     }
 
-    virtual void handleAppVersionRequest(shared_ptr<Client> client, const JsonObject& data) override;
+    virtual void handleAppVersionRequest(shared_ptr<Client> client) override;
 
 private:
 
     void refreshVersionBackground()
     {
-        /*BDTask newTask(EBDTaskType::LoadAppVersion);
+        BDTask newTask(EBDTaskType::LoadAppVersion);
         newTask.payload = _AppVersion.ToJSON();
         std::weak_ptr<AppVersionServiceImpl> weakSelf = shared_from_this();
 
@@ -54,11 +54,11 @@ private:
             }
         };
 
-        m_bdQueue.push(std::move(newTask));*/
+        m_bdQueue.push(std::move(newTask));
     }
     void setupNextRefresh()
     {
-        /*m_refreshTimer.expires_after(std::chrono::minutes(5));
+        m_refreshTimer.expires_after(std::chrono::minutes(5));
 
         std::weak_ptr<AppVersionServiceImpl> weakSelf = shared_from_this();
         m_refreshTimer.async_wait([weakSelf](const asio::error_code& ec)
@@ -69,7 +69,7 @@ private:
             {
                 self->refreshVersionBackground(); 
             }
-        });*/
+        });
     }
     void dbResponse(const JsonObject& res)
     {

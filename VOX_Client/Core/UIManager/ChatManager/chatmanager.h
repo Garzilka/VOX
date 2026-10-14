@@ -7,7 +7,7 @@
 #include <QVariantMap>
 #include <QHash>
 #include <QDebug>
-#include "Core/Data/CoreData.h"
+#include "Core/Data/DataIncluds.h"
 
 class QChatManager : public QObject
 {

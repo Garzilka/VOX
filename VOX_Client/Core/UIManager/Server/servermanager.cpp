@@ -16,7 +16,7 @@ QServerManager::QServerManager(QObject *parent) : QObject(parent)
 QVariantList QServerManager::getServerList() const
 {
     QVariantList list;
-    for (const QString& guid : m_myServers)
+    /*for (const QString& guid : m_myServers)
     {
         QVariantMap sMap;
         sMap["serverGUID"] = guid;
@@ -32,7 +32,7 @@ QVariantList QServerManager::getServerList() const
             sMap["iconUrl"] = "";
         }
         list.append(sMap);
-    }
+    }*/
     return list;
 }
 
@@ -41,12 +41,11 @@ QString QServerManager::getServerName(const QString& serverGUID)
 {
     if (serverGUID.isEmpty()) return "";
 
-    // Если паспорт уже есть в реестре — моментально возвращаем имя
-    if (m_serverRegistry.contains(serverGUID)) {
+    /*if (m_serverRegistry.contains(serverGUID))
+    {
         return m_serverRegistry[serverGUID].Name;
-    }
+    }*/
 
-    // Если паспорта нет — ставим его в очередь на батч-запрос к серверу
     if (!m_pendingPassportRequests.contains(serverGUID))
     {
         m_pendingPassportRequests.insert(serverGUID);
@@ -59,13 +58,12 @@ QString QServerManager::getServerName(const QString& serverGUID)
     return "Загрузка...";
 }
 
-// ПРОВЕРКА ЧЛЕНСТВА: Работает локально в одну строку без сетевых запросов и JOIN-ов
 bool QServerManager::isUserMemberOfServer(const QString& serverGUID) const
 {
     return m_myServers.contains(serverGUID);
 }
 
-// Отправка батч-запроса паспортов на бэкенд (Команда RequestServerShortData)
+
 void QServerManager::sendBatchPassportRequest()
 {
     /*if (m_pendingPassportRequests.isEmpty()) return;
@@ -78,7 +76,7 @@ void QServerManager::sendBatchPassportRequest()
     m_pendingPassportRequests.clear();*/
 }
 
-// Слот-обработчик ответа от QConnection: Прилетел пакет паспортов из сети
+
 void QServerManager::handleServerPassportsLoaded(const QList<SServerPassport>& passports)
 {
     /*for (const auto& shortInfo : passports)
@@ -91,20 +89,19 @@ void QServerManager::handleServerPassportsLoaded(const QList<SServerPassport>& p
         m_serverRegistry[shortInfo.ServerGUID] = passport;
     }
 
-    // Оповещаем весь интерфейс (иконки и инвайты), что данные обновились
+
     emit serverRegistryUpdated();
     emit serverListChanged();*/
 }
 
-// Слот-обработчик ответа от QConnection: Прилетел плоский список подписок при логине
+
 void QServerManager::initMyServersList(const QStringList& guids)
 {
     m_myServers = guids;
 
-    emit serverListChanged(); // Левая панель в QML мгновенно вырастит круглые кнопки-скелетоны
+    emit serverListChanged();
 
-    // Проактивно прогоняем список серверов через ленивый загрузчик,
-    // чтобы запустить батч-таймер на скачивание их названий
+
     for (const QString& guid : m_myServers)
     {
         getServerName(guid);
@@ -114,14 +111,14 @@ void QServerManager::selectActiveChannelForServer(const QString& serverGUID, con
 {
     /*QString targetChannelGUID = "";
 
-    // 1. Проверяем, есть ли сохраненный канал для этого сервера в нашей истории
+
     if (m_lastServerChannelCache.contains(serverGUID))
     {
         targetChannelGUID = m_lastServerChannelCache[serverGUID];
     }
     else
     {
-        // 2. Если истории нет, ищем первый доступный текстовый канал (ServerText = 2)
+
         for (const auto& chan : channels)
         {
             if (chan.ChatType == 2)
@@ -132,7 +129,7 @@ void QServerManager::selectActiveChannelForServer(const QString& serverGUID, con
         }
     }
 
-    // 3. Если канал определен, принудительно активируем его в интерфейсе
+
     if (!targetChannelGUID.isEmpty())
     {
         QUIManager::getInstance().GetChatManager()->setActiveRoomGUID(targetChannelGUID);
@@ -146,19 +143,19 @@ void QServerManager::setActiveServerGUID(const QString &serverGUID)
     m_activeServerGUID = serverGUID;
     emit activeServerGUIDChanged();
 
-    // Если структура каналов уже закэширована — мгновенно поднимаем UI и восстанавливаем чат
+
     if (m_serverDetailsCache.contains(m_activeServerGUID))
     {
         const auto& cachedDetails = m_serverDetailsCache[m_activeServerGUID];
         updateUIWithServerDetails(cachedDetails);
         qInfo() << "ServerManager | Каналы сервера подняты из кэша. Накатываем активный чат.";
 
-        // Вызываем умный выбор канала
+
         selectActiveChannelForServer(m_activeServerGUID, cachedDetails.Channels);
     }
     else
     {
-        // Если кэш пуст — очищаем старые списки каналов/участников и идем в сеть
+
         m_currentChannels.clear();
         m_currentParticipants.clear();
         emit currentChannelsChanged();
@@ -183,7 +180,7 @@ void QServerManager::setServerDetailsFromServer(const SServerDetailsData& detail
         updateUIWithServerDetails(fullDetails);
         qInfo() << "ServerManager | Структура сервера получена из сети. Накатываем активный чат.";
 
-        // Вызываем умный выбор канала
+
         selectActiveChannelForServer(details.ServerGUID, details.Channels);
     }*/
 }
@@ -192,17 +189,17 @@ void QServerManager::handleServerCreated(const SCreateServerData& serverData)
 {
     /*if (serverData.ServerGUID.isEmpty() || serverData.ServerName.isEmpty()) return;
 
-    // Вкладываем паспорт созданного сервера в глобальный реестр
+
     SServerPassport passport;
     passport.ServerGUID = serverData.ServerGUID;
     passport.Name = serverData.ServerName;
     m_serverRegistry.insert(serverData.ServerGUID, passport);
 
-    // Просто пушим новый GUID в плоский список подписок связи
+
     m_myServers.append(serverData.ServerGUID);
     emit serverListChanged();
 
-    // Переводим фокус приложения на новый сервер
+
     setState(1);
     setActiveServerGUID(serverData.ServerGUID);*/
 }

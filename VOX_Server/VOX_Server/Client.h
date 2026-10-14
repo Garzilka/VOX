@@ -16,7 +16,6 @@ class Client : public std::enable_shared_from_this<Client>
 
 
     bool _writingInProgress = false;
-    queue<vector<uint8_t>> _writeQueue;
     steady_timer _writeTimer;
 
 public:
@@ -49,9 +48,10 @@ private:
     void receiveMessage(JsonObject& data, ETypeOfMessage& TypeMessage);
     bool handleCryptoHandshake(const JsonObject& json);
 
-    // Корутина C++20 для чтения данных из сокета
-    asio::awaitable<void> readLoop();
 
-    // Корутина C++20 для записи данных (обслуживает очередь отправки)
-    asio::awaitable<void> WriteLoop();
+    asio::awaitable<void> readLoop(std::shared_ptr<Client> self);
+    asio::awaitable<void> WriteLoop(std::shared_ptr<Client> self);
+    std::queue<ByteArray> _writeQueue;
+    std::mutex _writeQueueMutex;
+    std::atomic<bool> _isDisconnected{ false };
 };

@@ -1,44 +1,40 @@
 #pragma once
+#include "../ServerInterfaces.h" 
 #include "../Server.h"
-#include "../ServerInterfaces.h"
+#include "Data/AsioThreads.h"
 
-class MakeServerServiceImpl : public IMakeServerService
+class BDTaskQueue;
+class INotificationService;
+
+class ServerServiceImpl : public IServerService,
+    public std::enable_shared_from_this<ServerServiceImpl>
 {
 private:
-    weak_ptr<IDBServerService> _DBService;
-    weak_ptr<ICacheServerService> _CacheService;
+    shared_ptr<INotificationService> notificationService;
+    shared_ptr<ICacheServerService> cacheServerService;
+    mutable std::mutex _Mutex;
+
+    asio::io_context& m_ioContext;
+    BDTaskQueue& m_bdQueue;
 
 public:
-    MakeServerServiceImpl(shared_ptr<IDBServerService> in_DBService, shared_ptr<ICacheServerService> in_CacheService) :
-        _DBService(in_DBService), _CacheService(in_CacheService) {}
+    ServerServiceImpl(
+        asio::io_context& ioCtx,
+        BDTaskQueue& bdQueue,
+        std::shared_ptr<INotificationService> in_NotificationService,
+        std::shared_ptr<ICacheServerService> in_CacheServerService)
+        : m_ioContext(ioCtx),
+        m_bdQueue(bdQueue),
+        notificationService(in_NotificationService),
+        cacheServerService(in_CacheServerService) {
+    }
 
+    virtual void makeServer(const string userUUID, const SCreateServerData& Req) override;
+    virtual void ServerInvite(const string userUUID, const SGenerateInviteData& Req) override;
+    virtual void ServerAccept(const string userUUID, const SAcceptInviteData& obj) override;
 
-    virtual void makeServer(const string userUUID, const JsonObject& obj) override
-    {
-        if (userUUID.empty()) return;
-
-        auto sharedCache = _CacheService.lock();
-        if (!sharedCache) return;
-
-        auto sharedDBService = _DBService.lock();
-        if (!sharedDBService) return;
-
-        auto ServerState = sharedCache->findOrAddServer(userUUID);
-
-        if (ServerState._State == EServerState::LOADING)
-        {
-            //TODO: Сделать ответ клиенту: Ошибка, подождите
-            return;
-        }
-
-        auto Server = ServerState._MakedServer.lock();
-        if (!Server)
-        {
-            //TODO: Сделать ответ клиенту: Неизвестная ошикабка при создании сервера
-            return;
-        }
-
-        Server->addPendingClients(userUUID);
-        sharedDBService->requestMakeServerInDB(std::move(userUUID), obj);
-    };
+private:
+    void responseMakeServerFromDB(const JsonObject& obj, const string& clientUUID);
+    void responseServerInviteFromDB(const JsonObject& obj, const string& clientUUID);
+    void responseServerAcceptFromDB(const JsonObject& obj, const string& clientUUID);
 };

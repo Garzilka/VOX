@@ -2,7 +2,8 @@
 #include "commands.h"
 #include "Client.h"
 #include "../../Services/Common/CommonInterfaces.h"
-
+#include "../../Services/Relation/RelationshipInterfaces.h"
+#include "../../Services/Users/UserProfileInterfaces.h"
 
 
 asio::awaitable<void> LoginHandler::execute(shared_ptr<Client> sender, const JsonObject& data)
@@ -29,33 +30,65 @@ asio::awaitable<void> LoginHandler::execute(shared_ptr<Client> sender, const Jso
     co_return;
 }
 
-asio::awaitable<void> RequestFriendHandler::execute(shared_ptr<Client> sender, const JsonObject& data)
+asio::awaitable<void> FriendRequestHandler::execute(shared_ptr<Client> sender, const JsonObject& data)
 {
+    if (!_FriendService) co_return;
+
+    SFriendRequest Req(data);
+    Req.SenderUUID = sender->getUUID();
+    _FriendService->FriendRequest(Req);
+
     co_return;
 }
 
-asio::awaitable<void> ResponseFriendHandler::execute(shared_ptr<Client> sender, const JsonObject& data) 
+asio::awaitable<void> FriendAcceptHandler::execute(shared_ptr<Client> sender, const JsonObject& data)
 {
+
+    if (!_FriendService) co_return;
+
+    SFriendAccept Req(data);
+    Req.SenderUUID = sender->getUUID();
+    _FriendService->FriendAccept(Req);
+
     co_return;
 }
 
-asio::awaitable<void> RequestFriendsListHandler::execute(shared_ptr<Client> sender, const JsonObject& data) 
+asio::awaitable<void> RequestRelationsHandler::execute(shared_ptr<Client> sender, const JsonObject& data)
 {
+    if (!_RelationCacheService) co_return;
+
+    SUserRelations Response;
+    if (!_RelationCacheService->handleUserRelations(sender->getUUID(), Response)) co_return;
+
+    sender->sendMessage(Response);
     co_return;
 }
 
 asio::awaitable<void> RequestAppVersionHandler::execute(shared_ptr<Client> sender, const JsonObject& data) 
 {
+    if (!_AppVersionService) co_return;
+
+    _AppVersionService->handleAppVersionRequest(sender);
     co_return;
 }
 
 asio::awaitable<void> RequestSearchUsersHandler::execute(shared_ptr<Client> sender, const JsonObject& data) 
 {
+    if (!_SearchUserService) co_return;
+
+    SSearchUsersData Req(data);
+    _SearchUserService->handleSearchUsers(sender->getUUID(), Req);
     co_return;
 }
 
-asio::awaitable<void> RequestOpenUsersDataHandler::execute(shared_ptr<Client> sender, const JsonObject& data) 
+asio::awaitable<void> RequestUsersPassportHandler::execute(shared_ptr<Client> sender, const JsonObject& data)
 {
+    if (!_UserProfileCacheService) co_return;
+
+    SUserPassport Request(data);
+    if (!_UserProfileCacheService->getUserPassport(sender->getUUID(), Request)) co_return;
+
+    sender->sendMessage(Request);
     co_return;
 }
 

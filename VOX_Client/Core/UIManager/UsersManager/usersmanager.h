@@ -8,13 +8,14 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QVariantMap>
-#include "Core/Data/CoreData.h"
+#include "Core/Data/DataIncluds.h"
 #include "Core/connection.h"
 
-// Локальный кэш профиля пользователя на клиенте
-struct SClientUserCache {
+
+struct SClientUserCache
+{
     SUserPassport Data;
-    QDateTime ExpiresAt; // Время, после которого профиль считается просроченным
+    QDateTime ExpiresAt;
 };
 
 class QUsersManager : public QObject
@@ -22,8 +23,8 @@ class QUsersManager : public QObject
     Q_OBJECT
 private:
     QHash<QString, SClientUserCache> m_usersCache;
-    QSet<QString> m_pendingRequests; // GUID-ы, которые мы уже готовимся запросить по сети
-    QTimer* m_batchTimer;            // Таймер для склейки множества запросов в один батч
+    QSet<QString> m_pendingRequests;
+    QTimer* m_batchTimer;
 
 public:
 
@@ -31,7 +32,7 @@ public:
     {
         m_batchTimer = new QTimer(this);
         m_batchTimer->setSingleShot(true);
-        m_batchTimer->setInterval(50); // Ждем 50мс, собирая GUID-ы со всего экрана, и шлем ОДИН пакет
+        m_batchTimer->setInterval(500); // Ждем 50мс, собирая GUID-ы со всего экрана, и шлем ОДИН пакет
         connect(m_batchTimer, &QTimer::timeout, this, &QUsersManager::sendBatchRequest);
 
         // Подключаем транспортный сигнал из QConnection (команда 18)
@@ -39,9 +40,6 @@ public:
                 this, &QUsersManager::onBatchUsersLoaded);
     }
 
-    // --- МЕТОДЫ ДЛЯ ВЫЗОВА ИЗ QML ДЕЛЕГАТОВ ---
-
-    // Возвращает отображаемое имя (Display Name). Если его нет — возвращает "Загрузка..."
     Q_INVOKABLE QString getDisplayName(const QString& guid)
     {
         if (guid.isEmpty()) return "";
@@ -53,9 +51,9 @@ public:
         return "Загрузка...";
     }
 
-    // Возвращает HEX-цвет для аватарки на основе статуса присутствия
-    Q_INVOKABLE QString getStatusColor(const QString& guid) {
-        if (!m_usersCache.contains(guid)) return "#80848e"; // Offline / Загрузка
+    Q_INVOKABLE QString getStatusColor(const QString& guid)
+    {
+        if (!m_usersCache.contains(guid)) return "#80848e";
 
         switch (m_usersCache[guid].Data.PresenceStatus)
         {
@@ -67,9 +65,10 @@ public:
     }
 
 private:
-    // Проверяет пользователя в кэше. Если нет или просрочен — ставит в очередь на запрос
     bool checkAndQueueUser(const QString& guid)
     {
+        if(guid.isEmpty()) return false;
+
         bool exists = m_usersCache.contains(guid);
         bool isExpired = exists && (QDateTime::currentDateTime() > m_usersCache[guid].ExpiresAt);
 
@@ -80,30 +79,27 @@ private:
                 m_pendingRequests.insert(guid);
                 if (!m_batchTimer->isActive())
                 {
-                    m_batchTimer->start(); // Запускаем таймер склейки
+                    m_batchTimer->start();
                 }
             }
-            return exists; // Если просрочен, пока вернем старое значение, пока качается новое
+            return exists;
         }
         return true;
     }
 
-    // Склеивает все запросы с экрана и шлет одну команду RequestBatchUsers (18)
     void sendBatchRequest()
     {
         if (m_pendingRequests.isEmpty()) return;
 
         QList<QString> guidsList = m_pendingRequests.values();
-        QConnection::getInstance().requestOpenDataUsers(guidsList);
-
-        // Очищаем накопительный буфер, так как пакет улетел
+        QConnection::getInstance().requestUserPassport(guidsList);
         m_pendingRequests.clear();
     }
 
-    // Слот-обработчик ответа от QConnection
     void onBatchUsersLoaded(const QVariantList& users)
     {
-        for (const auto& var : users) {
+        for (const auto& var : users)
+        {
             QVariantMap uMap = var.toMap();
             SUserPassport uData;
             uData.UUID = uMap["guid"].toString();
@@ -118,12 +114,11 @@ private:
             m_usersCache[uData.UUID] = cacheItem;
         }
 
-        // Мощный триггер: заставляем QML перерисовать свойства зависимостей
         emit dataChanged();
     }
 
 signals:
-    void dataChanged(); // Сигнал, на который среагируют все сообщения чата
+    void dataChanged();
 };
 
 #endif // USERSMANAGER_H

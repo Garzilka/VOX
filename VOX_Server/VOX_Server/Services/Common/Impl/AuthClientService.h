@@ -3,6 +3,7 @@
 #include <regex>
 
 #include "../CommonInterfaces.h"
+#include "../../Relation/RelationshipInterfaces.h"
 #include "Data/Common.h"
 #include "Data/AsioThreads.h"
 
@@ -13,14 +14,17 @@ class AuthClientServiceImpl : public IAuthClientService,
 {
     shared_ptr<ICacheClientService> _CacheClientService;
     shared_ptr<INotificationService> notificationService;
+    shared_ptr<IRelationCacheService> relationCacheService;
 
     asio::io_context& m_ioContext;
     BDTaskQueue& m_bdQueue;
 
 public:
     AuthClientServiceImpl(asio::io_context& ioCtx, BDTaskQueue& bdQueue, shared_ptr<ICacheClientService> in_CacheService, 
-        shared_ptr<INotificationService> in_notificationService)
-        : m_ioContext(ioCtx), m_bdQueue(bdQueue), _CacheClientService(in_CacheService), notificationService(in_notificationService) {}
+        shared_ptr<INotificationService> in_notificationService, shared_ptr<IRelationCacheService> in_relationCacheService)
+        : m_ioContext(ioCtx), m_bdQueue(bdQueue), _CacheClientService(in_CacheService), notificationService(in_notificationService)
+        , relationCacheService(in_relationCacheService)
+    {}
 
     virtual bool authClient(const string& userpeerAddress, const SAuthorizationData& data) override;
 

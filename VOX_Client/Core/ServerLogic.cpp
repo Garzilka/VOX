@@ -18,24 +18,12 @@ void QConnection::ResponseGenerateInvite(QJsonObject &JSONObject)
 
 void QConnection::ResponseAcceptInvite(QJsonObject &JSONObject)
 {
-    SAcceptInviteData data(JSONObject);
-    emit inviteAccepted(data.ServerGUID, data.ServerName, data.GeneralChatGUID);
+
 }
 
 void QConnection::ResponseServersList(QJsonObject &JSONObject)
 {
-    // Распаковываем наш новый унифицированный контракт
-    SServersList Data(JSONObject);
 
-    qInfo() << "Транспорт | Получен плоский список серверов пользователя. Количество:" << Data.GUIDs.size();
-
-    // Передаем плоский список GUIDs в клиентский ServerManager для инициализации левой панели
-    // Для этого мы вызовем метод менеджера напрямую (или через сигнал)
-    QServerManager* serverMgr = QUIManager::getInstance().GetServerManager();
-    if (serverMgr) {
-        // Мы передаем строго список строк GUIDs
-        serverMgr->initMyServersList(Data.GUIDs);
-    }
 }
 
 void QConnection::ResponseServerShortData(QJsonObject &JSONObject)

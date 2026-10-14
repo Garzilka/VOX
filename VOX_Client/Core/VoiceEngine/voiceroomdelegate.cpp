@@ -6,10 +6,11 @@ void VoiceRoomDelegate::onTrackSubscribed(livekit::Room &room, const livekit::Tr
     if (!Event.track || Event.track->kind() != livekit::TrackKind::KIND_AUDIO)
         return;
 
+    // Копируем shared_ptr, выходим из SDK-потока
     auto track = Event.track;
     auto* engine = &QVoiceEngine::getInstance();
 
     QMetaObject::invokeMethod(engine, [engine, track]() {
-        engine->handleSubscribedTrack(track);
+        engine->handleSubscribedTrack(track); // дальше всё в GUI-потоке
     }, Qt::QueuedConnection);
 }

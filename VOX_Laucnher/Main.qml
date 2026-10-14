@@ -8,6 +8,8 @@ Window
     visible: true
     title: "VOX Launcher"
 
+    // ИСПРАВЛЕНО: Флаг Qt.Window возвращает иконку приложения на панель задач Windows 11,
+    // а FramelessWindowHint сохраняет кастомный безрамочный дизайн.
     flags: Qt.Window | Qt.FramelessWindowHint
     color: "transparent"
 
@@ -30,6 +32,7 @@ Window
         border.color: "#2b2d31"
         border.width: 1
 
+        // Позволяет перетаскивать безрамочное окно мышкой за любое место
         MouseArea {
             anchors.fill: parent
             property point clickPos: "0,0"
@@ -42,7 +45,7 @@ Window
         }
 
         // =====================================================================
-        // КНОПКА ЗАКРЫТИЯ
+        // ДОБАВЛЕНО: КНОПКА ЗАКРЫТИЯ (КРЕСТИК) В ПРАВОМ ВЕРХНЕМ УГЛУ
         // =====================================================================
         Button {
             id: closeButton
@@ -50,14 +53,14 @@ Window
             anchors.right: parent.right
             anchors.topMargin: 8
             anchors.rightMargin: 8
-            z: 999
+            z: 999 // Гарантирует, что кнопка всегда будет выше остальных слоев верстки
 
             implicitWidth: 24
             implicitHeight: 24
             flat: true
 
-            background: Rectangle
-            {
+            background: Rectangle {
+                // При ховере плавно красим в классический красный цвет закрытия окон Discord
                 color: closeButton.hovered ? "#f23f43" : "transparent"
                 radius: 4
                 Behavior on color { ColorAnimation { duration: 100 } }
@@ -67,17 +70,19 @@ Window
                 text: "✕"
                 font.pixelSize: 12
                 font.bold: true
+                // Если кнопка подсвечена красным — крестик белый, иначе серый
                 color: closeButton.hovered ? "#ffffff" : "#72767d"
                 anchors.centerIn: parent
             }
 
             HoverHandler { cursorShape: Qt.PointingHandCursor }
 
+            // Безопасно тушим приложение без вызова диспетчера задач
             onClicked: Qt.quit()
         }
 
         // =====================================================================
-        // Квадратный блок со спиннером
+        // СТИЛЬ 1: ИНТЕРФЕЙС СТАРТА DISCORD (Квадратный блок со спиннером)
         // =====================================================================
         ColumnLayout {
             id: discordStyleLayout
@@ -145,7 +150,7 @@ Window
         }
 
         // =====================================================================
-        // Панель скачивания
+        // СТИЛЬ 2: ИНТЕРФЕЙС EPIC GAMES LAUNCHER (Панель скачивания)
         // =====================================================================
         ColumnLayout {
             id: epicStyleLayout

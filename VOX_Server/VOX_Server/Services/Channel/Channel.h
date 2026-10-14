@@ -2,38 +2,38 @@
 
 #include "../../Data/MessagesIncluds.h"
 
-class Client;
-
 class Channel
 {
-
 private:
-    string m_UUID;
-    unordered_set<string> m_activeSubscribers;
-    queue<SMessageData> m_historyCache;
+    SChannelPassport _ChannelPassport;
+    SChannelDetails  _ChannelDetails;
+
+    unordered_set<string> _PassportPendingClients;
+    unordered_set<string> _DetailsPendingClients;
+
+    vector<std::function<void(string)>> _PassportCallbacks;
+    vector<std::function<void(string)>> _DetailsCallbacks;
+
+    mutable mutex _ChannelMutex;
+
+    bool _isPassportValid = false;
+    bool _isDetailsValid = false;
 
 public:
-    explicit Channel(string UUID);
+    explicit Channel() = default;
 
-    void subscribe(const string& _Client_UUID)
-    {
-        if (_Client_UUID.empty()) return;
+    void addParticipant(const string& userUUID);
+    void removeParticipant(const string& userUUID);
 
-        m_activeSubscribers.insert(_Client_UUID);
-    }
+    bool getChannelPassport(SChannelPassport& outPassport, const string& clientUUID);
+    void warmupPassport(std::function<void(string)>& callback);
+    bool setChannelPassport(SChannelPassport newPassport, vector<string>& outPendings);
 
-    void unsubscribe(const string& _Client_UUID)
-    {
-        if (_Client_UUID.empty()) return;
+    // Детали канала
+    bool getChannelDetails(SChannelDetails& outDetails, const string& clientUUID);
+    void warmupDetails(std::function<void(string)>& callback);
+    bool setChannelDetails(SChannelDetails newDetails, vector<string>& outPendings);
 
-        m_activeSubscribers.erase(_Client_UUID);
-    }
-
-    void newMessage(const SMessageData& msg);
-
-    vector<SMessageData> GetHistory()
-    {
-        
-        return {};// m_historyCache.toList();
-    }
+    bool isPassportValid() const { return _isPassportValid; }
+    bool isDetailsValid() const { return _isDetailsValid; }
 };

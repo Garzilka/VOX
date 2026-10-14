@@ -13,7 +13,7 @@ Rectangle
         spacing: 0
 
         // ==========================================
-        // ДУБЛИРУЮЩИЙ ХЕДЕР ДЛЯ СОХРАНЕНИЯ НАВИГАЦИИ
+        // НАВИГАЦИОННЫЙ ХЕДЕР ЭКРАНА
         // ==========================================
         Rectangle
         {
@@ -47,10 +47,12 @@ Rectangle
                     font.bold: true;
                     font.pixelSize: 14
 
-                    MouseArea {
+                    MouseArea
+                    {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: {
+                        onClicked:
+                        {
                             FriendsManager.setState(0);
                             ClientConnection.requestDirectChats();
                         }
@@ -59,7 +61,7 @@ Rectangle
 
                 Text
                 {
-                    text: "Ожидание (" + requestsListView.count + ")";
+                    text: "Ожидание (" + FriendsManager.pendingRequests.length + ")";
                     color: FriendsManager.State === 3 ? "#ffffff" : "#b5bac1";
                     font.bold: true;
                     font.pixelSize: 14
@@ -76,7 +78,8 @@ Rectangle
                     id: addFriendBtn
                     text: "Добавить в друзья"
 
-                    contentItem: Text {
+                    contentItem: Text
+                    {
                         text: addFriendBtn.text
                         color: FriendsManager.State === 2 ? "#23a55a" : "#ffffff"
                         font.bold: true
@@ -85,7 +88,8 @@ Rectangle
                         verticalAlignment: Text.AlignVCenter
                     }
 
-                    background: Rectangle {
+                    background: Rectangle
+                    {
                         implicitWidth: 140
                         implicitHeight: 28
                         color: FriendsManager.State === 2 ? "transparent" : "#248046"
@@ -101,7 +105,7 @@ Rectangle
         }
 
         // ==========================================
-        // КОНТЕНТНЫЙ БЛОК ЗАЯВОК
+        // ОСНОВНОЙ КОНТЕНТНЫЙ БЛОК
         // ==========================================
         Item
         {
@@ -114,174 +118,18 @@ Rectangle
                 anchors.margins: 30
                 spacing: 20
 
-                Text {
+                Text
+                {
                     text: "ЗАЯВКИ В ДРУЗЬЯ"
                     color: "#ffffff"
                     font.bold: true
                     font.pixelSize: 16
                 }
 
-                Item
+                RequestsListWidget
                 {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-
-                    // Заглушка
-                    Rectangle
-                    {
-                        anchors.fill: parent
-                        color: "transparent"
-                        border.color: "#2b2d31"
-                        border.width: 1
-                        radius: 8
-                        visible: requestsListView.count === 0
-
-                        ColumnLayout
-                        {
-                            anchors.centerIn: parent
-                            spacing: 12
-
-                            Text {
-                                text: "⌛ У вас нет ожидающих заявок"
-                                color: "#949ba4"
-                                font.pixelSize: 15
-                                Layout.alignment: Qt.AlignHCenter
-                            }
-                        }
-                    }
-
-                    // Лента заявок
-                    ListView
-                    {
-                        id: requestsListView
-                        anchors.fill: parent
-                        model: FriendsManager.pendingRequests
-                        spacing: 8
-                        clip: true
-                        visible: count > 0
-
-                        delegate: Rectangle
-                        {
-                            width: requestsListView.width
-                            height: 60
-                            color: itemMouseArea.containsMouse ? "#35373c" : "#2b2d31"
-                            radius: 8
-
-                            MouseArea {
-                                id: itemMouseArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                acceptedButtons: Qt.NoButton
-                            }
-
-                            RowLayout
-                            {
-                                anchors.fill: parent
-                                anchors.leftMargin: 12
-                                anchors.rightMargin: 12
-                                spacing: 12
-
-                                // Аватар
-                                Rectangle
-                                {
-                                    width: 38
-                                    height: 38
-                                    radius: 19
-                                    color: "#4f545c"
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: (modelData && typeof modelData["displayName"] === "string" && modelData["displayName"].length > 0)
-                                              ? modelData["displayName"].substring(0, 1).toUpperCase()
-                                              : "?"
-                                        color: "#ffffff"
-                                        font.bold: true
-                                        font.pixelSize: 16
-                                    }
-                                }
-
-                                // Текстовый блок профиля
-                                ColumnLayout
-                                {
-                                    spacing: 2
-                                    Layout.fillWidth: true
-
-                                    Text {
-                                        text: modelData["displayName"] ? modelData["displayName"] : ""
-                                        color: "#ffffff"
-                                        font.bold: true
-                                        font.pixelSize: 14
-                                    }
-
-                                    Text {
-                                        text: modelData["relationStatus"] === 1 ? "Входящая заявка в друзья" : "Исходящая заявка в друзья"
-                                        color: "#b5bac1"
-                                        font.pixelSize: 12
-                                    }
-                                }
-
-                                // Ряды интерактивных кнопок
-                                RowLayout
-                                {
-                                    spacing: 8
-
-                                    // Кнопка "Принять"
-                                    Button
-                                    {
-                                        id: acceptBtn
-                                        visible: modelData["relationStatus"] === 1
-                                        text: "✔"
-
-                                        contentItem: Text {
-                                            text: acceptBtn.text
-                                            color: "#ffffff"
-                                            font.bold: true
-                                            font.pixelSize: 14
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-
-                                        background: Rectangle {
-                                            implicitWidth: 36
-                                            implicitHeight: 36
-                                            color: acceptBtn.hovered ? "#1f6638" : "#248046"
-                                            radius: 18
-                                        }
-
-                                        HoverHandler { cursorShape: Qt.PointingHandCursor }
-                                        onClicked: FriendsManager.handleFriendAction(modelData["guid"], 0);
-                                    }
-
-                                    // Кнопка "Отклонить"
-                                    Button
-                                    {
-                                        id: declineBtn
-                                        text: "✖"
-
-                                        contentItem: Text
-                                        {
-                                            text: declineBtn.text
-                                            color: "#ffffff"
-                                            font.bold: true
-                                            font.pixelSize: 12
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-
-                                        background: Rectangle
-                                        {
-                                            implicitWidth: 36
-                                            implicitHeight: 36
-                                            color: declineBtn.hovered ? "#952b2a" : "#da373c"
-                                            radius: 18
-                                        }
-                                        HoverHandler { cursorShape: Qt.PointingHandCursor }
-                                        onClicked: FriendsManager.handleFriendAction(modelData["guid"], 1);
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }

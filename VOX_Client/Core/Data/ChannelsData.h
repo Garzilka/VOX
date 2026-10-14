@@ -2,19 +2,135 @@
 #define CHANNELSDATA_H
 #include "CoreData.h"
 
+struct SAttachmentData
+{
+    EAttachmentType Type;
+    QString Url;          // Ссылка на картинку, файл или иконку стикера
+    QString MetaData;     // Дополнительные данные: размер файла, имя файла или токен инвайта
 
-struct SChannelHistoryData : public SBaseMessageData
+    QJsonObject ToJSON() const
+    {
+        QJsonObject obj;
+        obj["Type"] = static_cast<int>(Type);
+        obj["Url"] = Url;
+        obj["MetaData"] = MetaData;
+        return obj;
+    }
+
+    static SAttachmentData FromJSON(const QJsonObject& obj)
+    {
+        SAttachmentData data;
+        data.Type = static_cast<EAttachmentType>(obj["Type"].toInt());
+        data.Url = obj["Url"].toString();
+        data.MetaData = obj["MetaData"].toString();
+        return data;
+    }
+};
+
+
+struct SMessageData : public SBaseMessageData
+{
+    QString RoomGUID;
+    QString SenderGUID;
+    QString Message;
+    QList<SAttachmentData> Attachments;
+
+    SMessageData(QString _RoomGUID, QString _SenderGUID, QString _Message,
+                 QList<SAttachmentData> _Attachments = {}, ETypeOfMessage _TypeMessage = ETypeOfMessage::Message)
+        : SBaseMessageData(_TypeMessage), RoomGUID(_RoomGUID), SenderGUID(_SenderGUID),
+        Message(_Message), Attachments(_Attachments) {};
+
+    virtual ~SMessageData() {}
+
+    SMessageData(const QJsonObject& InJSON) : SBaseMessageData(InJSON)
+    {
+        RoomGUID = InJSON["RoomGUID"].toString();
+        SenderGUID = InJSON["SenderGUID"].toString();
+        Message = InJSON["Message"].toString();
+
+        if (InJSON.contains("Attachments") && InJSON["Attachments"].isArray())
+        {
+            QJsonArray arr = InJSON["Attachments"].toArray();
+            for (const QJsonValue& val : arr)
+            {
+                Attachments.append(SAttachmentData::FromJSON(val.toObject()));
+            }
+        }
+    };
+
+    // Сериализация в JSON для отправки на сервер
+    virtual QJsonObject ToJSON() const override
+    {
+        QJsonObject messageObj = SBaseMessageData::ToJSON();
+        messageObj["RoomGUID"] = RoomGUID;
+        messageObj["SenderGUID"] = SenderGUID;
+        messageObj["Message"] = Message;
+
+        QJsonArray attachArray;
+        for (const auto& attach : Attachments) {
+            attachArray.append(attach.ToJSON());
+        }
+        messageObj["Attachments"] = attachArray;
+
+        return messageObj;
+    }
+};
+
+struct SChannelPassport
+{
+    QString chatUUID;
+    int ChatType = ETypeOfChat::DirectText;
+    QString Name;
+    QString ServerUUID;
+    QString ParentUUID;
+    QString IconUrl;
+    QString Description;
+    QList<QString> ParticipantGUIDs;
+    QJsonObject ToJSON() const
+    {
+        QJsonObject obj;
+        obj["chatUUID"] = chatUUID;
+        obj["ChatType"] = ChatType;
+        obj["Name"] = Name;
+        obj["ServerUUID"] = ServerUUID;
+        obj["ParentUUID"] = ParentUUID;
+        obj["IconUrl"] = IconUrl;
+        obj["Description"] = Description;
+        QJsonArray parts;
+        for(const auto& id : ParticipantGUIDs) parts.append(id);
+        obj["ParticipantGUIDs"] = parts;
+        return obj;
+    }
+    static SChannelPassport FromJSON(const QJsonObject& obj)
+    {
+        SChannelPassport data;
+        data.chatUUID = obj["chatUUID"].toString();
+        data.ChatType = obj["ChatType"].toInt();
+        data.Name = obj["Name"].toString();
+        data.ServerUUID = obj["ServerUUID"].toString();
+        data.ParentUUID = obj["ParentUUID"].toString();
+        data.Description = obj["Description"].toString();
+        if(obj.contains("ParticipantGUIDs") && obj["ParticipantGUIDs"].isArray())
+        {
+            QJsonArray arr = obj["ParticipantGUIDs"].toArray();
+            for(const QJsonValue& val : arr) data.ParticipantGUIDs.append(val.toString());
+        }
+        return data;
+    }
+};
+
+struct SChannelDetails : public SBaseMessageData
 {
     QString RoomGUID;
     QList<SMessageData> Messages;
 
-    SChannelHistoryData(ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelDetails)
+    SChannelDetails(ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelDetails)
         : SBaseMessageData(_TypeMessage) {};
 
-    SChannelHistoryData(QString _RoomGUID, ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelDetails)
+    SChannelDetails(QString _RoomGUID, ETypeOfMessage _TypeMessage = ETypeOfMessage::ChannelDetails)
         : SBaseMessageData(_TypeMessage),RoomGUID(_RoomGUID)  {};
 
-    SChannelHistoryData(const QJsonObject& InJSON) : SBaseMessageData(InJSON)
+    SChannelDetails(const QJsonObject& InJSON) : SBaseMessageData(InJSON)
     {
         RoomGUID = InJSON["RoomGUID"].toString();
         Messages.clear();

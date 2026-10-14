@@ -15,7 +15,6 @@ private:
     bool _isValid = false;
 
     bool LoadDetails();
-    void fillPendingList(vector<string>& result, unordered_set<string>& source);
 public:
     explicit User() = default;
     bool getUserPassport(SUserPassport& newPassport, const string& clientUUID);

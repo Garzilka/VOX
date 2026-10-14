@@ -41,12 +41,11 @@ public:
     // ==========================================
     // Работа с блоком друзей
     // ==========================================
-    vector<SUserPassport> getFriendsList(const string& myUUID);
-    vector<SUserPassport> searchUsersByUsername(const string& myUUID, const string& searchQuery);
-    vector<SUserPassport> getBatchUsersFromDB(const vector<string>& UUIDs);
+    bool searchUsersByUsername(const string& myUUID, SSearchUsersData& searchQuery);
     pair<bool, string> sendFriendRequest(const string& senderUUID, const string& targetUsername);
     bool handleFriendResponse(const string& myUUID, const string& targetUUID, int action);
-
+    bool getUserRelations(const string& myUUID, SUserRelations& Result);
+    bool loadUserPassport(SUserPassport& Result);
     // ==========================================
     // Работа с каналами
     // ==========================================

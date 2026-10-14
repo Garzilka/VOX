@@ -12,11 +12,11 @@ enum class EServerState
 struct SGettedServerState
 {
     EServerState _State;
-    weak_ptr<class Server> _MakedServer;
+    shared_ptr<class Server> _MakedServer;
 
     SGettedServerState(EServerState result_State) : _State(result_State) {};
 
-    bool isReadyToUse() { return (_MakedServer.lock() && _State == EServerState::READY); }
+    bool isReadyToUse() { return (_MakedServer && _State == EServerState::READY); }
 };
 
 class Server 

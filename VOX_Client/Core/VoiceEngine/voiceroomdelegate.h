@@ -12,6 +12,7 @@
 #include <QAudioSink>
 #include "playbackworker.h"
 
+// ПОДКЛЮЧАЕМ ОФИЦИАЛЬНЫЕ ХЕДЕРЫ LIVEKIT SDK
 #include "livekit/room.h"
 #include "livekit/track.h"
 #include "livekit/room_event_types.h"
